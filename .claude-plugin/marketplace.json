@@ -1,0 +1,19 @@
+{
+  "name": "fleet-leader",
+  "owner": {
+    "name": "fleet-leader"
+  },
+  "metadata": {
+    "description": "Always-on ágensflotta skilljei: névsor, kérés, orvos, új ágens, runtime-tudás.",
+    "version": "1.2.0"
+  },
+  "plugins": [
+    {
+      "name": "fleet",
+      "source": "./plugin",
+      "description": "Flottatagság: roster, request, doctor, new-agent, runtime. A szabályfájlt a `fleet join` teszi a repóba.",
+      "version": "1.2.0",
+      "category": "productivity"
+    }
+  ]
+}

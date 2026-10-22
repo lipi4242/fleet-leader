@@ -1,0 +1,9 @@
+{
+  "name": "fleet",
+  "version": "1.2.0",
+  "description": "Always-on ágensflotta tagsági skilljei: roster, request, doctor, new-agent, runtime.",
+  "author": {
+    "name": "fleet-leader"
+  },
+  "keywords": ["fleet", "agents", "telegram", "remote-control"]
+}

@@ -1,0 +1,12 @@
+{
+  "component": "fleet",
+  "version": "0.3.0",
+  "date": "2026-10-22",
+  "severity": "minor",
+  "security": false,
+  "breaking": false,
+  "migrations_from": [],
+  "you_need_to": [],
+  "changelog": "CHANGELOG.md#030",
+  "requires_if_present": {}
+}

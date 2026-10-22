@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install test dependency
+        run: python3 -m pip install pytest
+      - name: Runner tests
+        run: PYTHONPATH=src python3 -m unittest discover -s tests -q
+      - name: Runner unit tests
+        run: PYTHONPATH=src python3 -m unittest discover -s src/fleet -p 'test_*.py' -q
+      - name: Bridge tests
+        run: node --test "bridge/test/*.test.mjs"
+      - name: Example registry is valid
+        run: FLEET_REGISTRY=examples/registry PYTHONPATH=src python3 -m fleet.cli validate
