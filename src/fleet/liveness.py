@@ -255,26 +255,18 @@ def write_oom_adj(pid: int, value: int = AGENT_OOM_ADJ) -> bool:
     would otherwise fail every three minutes forever. The caller reports the
     count instead.
     """
-    # Elsődlegesen a validáló segédprogram, ha telepítve van. Ezt az Ubuntu
-    # 26.04 sudo-rs kényszerítette ki: NEM enged mintát a parancs
-    # argumentumában, tehát a szűk
-    #     <user> ALL=(root) NOPASSWD: /usr/bin/tee /proc/[0-9]*/oom_score_adj
-    # szabály érvénytelen, a `tee` argumentum nélküli engedélyezése pedig
-    # root-írást adna BÁRMELY fájlra — az nem szűkítés. A segédprogram maga
-    # validál (csak /proc/<szám>/oom_score_adj, -1000..1000), ezért a
-    # sudoers-bejegyzés ŐT illeti.
-    for cmd in ([OOM_HELPER, str(pid), str(value)] if Path(OOM_HELPER).exists()
-                else None, ["tee", f"/proc/{pid}/oom_score_adj"]):
-        if cmd is None:
-            continue
-        try:
-            p = subprocess.run(["sudo", "-n", *cmd],
-                               input=str(value), capture_output=True, text=True)
-            if p.returncode == 0:
-                return True
-        except OSError:
-            continue
-    return False
+    # Csak a validáló segédprogram (csak /proc/<szám>/oom_score_adj, -1000..1000); a
+    # sudoers-bejegyzés ŐT illeti. A régi `tee /proc/[0-9]*/oom_score_adj` tartalék-út
+    # kikerült (FL-02): klasszikus sudo alatt a `*` bármely karakterre illeszkedik, így
+    # rootként bármely fájl írható volt; sudo-rs alatt pedig érvénytelen szabály.
+    if not Path(OOM_HELPER).exists():
+        return False
+    try:
+        p = subprocess.run(["sudo", "-n", OOM_HELPER, str(pid), str(value)],
+                           input=str(value), capture_output=True, text=True)
+    except OSError:
+        return False
+    return p.returncode == 0
 
 
 def state_path(workdir: str, name: str) -> Path:

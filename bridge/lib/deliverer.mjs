@@ -25,6 +25,8 @@ export function createDeliverer({
   let pendingAlerted = false;
   // Melyseg-sapka jelzese: EGYSZER a folyamat elete alatt (ne zudits riasztas-aradatot).
   let dropAlerted = false;
+  // Az utolso sikertelen inject oka: a riasztas megnevezi (pl. engedelykero ablak).
+  let lastError = "";
 
   // Horgok (3.2 nyugta): beforeInject az inject ELOTT, onInjected csak SIKER utan —
   // kozvetlen es pending-uton egyarant. Hibajuk naplo, a kezbesitest nem allitja meg.
@@ -34,7 +36,7 @@ export function createDeliverer({
   const tryInject = (line) => {
     hook(beforeInject, line);
     const res = inject(session, line);
-    if (!res.ok) log(res.error);
+    if (!res.ok) { log(res.error); lastError = res.dialog ? res.error : ""; }
     else hook(onInjected, line);
     return res.ok;
   };
@@ -82,7 +84,7 @@ export function createDeliverer({
     if (!pendingAlerted && oldestPendingAgeMs(pending) > pendingAlertMs) {
       pendingAlerted = true;
       await alert(
-        `${pending.length} üzenetet nem tudok átadni ${label}nak (a tmux session nem fogad). ` +
+        `${pending.length} üzenetet nem tudok átadni ${label}nak (${lastError || "a tmux session nem fogad"}). ` +
         `Az üzenetek megvannak, sorban állnak — nézzetek rá a ${label} szolgáltatásra.`,
       );
     }

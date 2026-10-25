@@ -1,9 +1,14 @@
 {
   "name": "fleet",
-  "version": "1.2.0",
-  "description": "Always-on ágensflotta tagsági skilljei: roster, request, doctor, new-agent, runtime.",
+  "version": "1.4.0",
+  "description": "Always-on ágensflotta tagsági skilljei: roster, request, doctor, new-agent, runtime; identitás-kapu (F-41): a felhasználó azonosítója nem megy harmadik félnek kérdés nélkül; nem-akadó jóváhagyás: felügyelet nélkül (flotta-ágens) az engedélykérés nem vár örökké, a modell javaslatot kap.",
   "author": {
     "name": "fleet-leader"
   },
-  "keywords": ["fleet", "agents", "telegram", "remote-control"]
+  "keywords": [
+    "fleet",
+    "agents",
+    "telegram",
+    "remote-control"
+  ]
 }

@@ -1,5 +1,6 @@
 // 3.1 jovahagyo webhook: ki jelolt (handlers) es az osszedrotozott hid.
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -42,7 +43,7 @@ test("onApprovalCandidate a deliver ELOTT; dobasa -> 0 injektalas; a visszaadott
 });
 
 test("webhook-wire start(): idempotens — masodik hivas nem ad uj intervallumot", () => {
-  const stateDir = mkdtempSync(join(tmpdir(), "whw-"));
+  const stateDir = tempDir("whw-");
   const cfg = loadConfig({ TELEGRAM_BOT_TOKEN: "t", TELEGRAM_GROUP_CHAT_ID: "-100", TELEGRAM_ALLOWLIST_IDS: "1",
     TMUX_SESSION: "s", BRIDGE_STATE_DIR: stateDir, SUBETHA_REPLY_WEBHOOK: "https://h.example/x",
     SUBETHA_REPLY_WEBHOOK_TOKEN: TOKEN });
@@ -90,7 +91,7 @@ test("onApprovalCandidate: allowlistes DM reply-ja jelolt", () => {
 });
 
 function bridge(env = {}) {
-  const stateDir = mkdtempSync(join(tmpdir(), "whb-"));
+  const stateDir = tempDir("whb-");
   const cfg = loadConfig({ TELEGRAM_BOT_TOKEN: "t", TELEGRAM_GROUP_CHAT_ID: "-100",
     TELEGRAM_ALLOWLIST_IDS: "1", TMUX_SESSION: `nincs-ilyen-${process.pid}`, BRIDGE_STATE_DIR: stateDir,
     BRIDGE_REQUIRE_MENTION: "false", ...env });
@@ -133,7 +134,7 @@ test("createBridge: BE -> a jelolt a sorba megy es kimegy; token sehol a naplokb
 });
 
 test("createBridge: sorfajl-iras hiba -> 0 injektalas, processUpdate DOB (offset nem lep); javitva 1 injektalas + 1 POST", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "whq-"));
+  const dir = tempDir("whq-");
   const blocker = join(dir, "blokk");
   writeFileSync(blocker, "fajl, nem konyvtar");
   const { b, posts } = bridge({ SUBETHA_REPLY_WEBHOOK: "https://h.example/x", SUBETHA_REPLY_WEBHOOK_TOKEN: TOKEN,

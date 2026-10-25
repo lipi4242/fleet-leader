@@ -6,6 +6,7 @@ against (a repo that looks fine and is not deployable) is a filesystem fact.
 """
 import os
 import stat
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -55,6 +56,7 @@ class TestEngineDiscovery(unittest.TestCase):
 
     def setUp(self):
         self.d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.d, True)
 
     def test_root_entry_py_is_found(self):
         (self.d / "entry.py").write_text("")
@@ -165,6 +167,7 @@ class TestPreflightIntegration(unittest.TestCase):
 
     def setUp(self):
         self.home = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.home, True)
         (self.home / "eta").mkdir()
         self.brain = self.home / "eta" / "AGENTS.md"
         self.brain.write_text("# L\n\n## Scope boundary\nx\n\n## Release\ny\n")

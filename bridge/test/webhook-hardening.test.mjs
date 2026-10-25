@@ -1,6 +1,7 @@
 // Codex-review (3.1 utan): a hibaszoveg redakcioja (token, URL query/userinfo)
 // es a torzs kozben bonto szerver.
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -29,7 +30,7 @@ test("redact: token, userinfo es query -> ***, a host megmarad", () => {
 
 for (const kind of ["visszaadott", "dobott"]) {
   test(`webhook-sor: a ${kind} tokenes hiba sem a sorfajlba, sem a notice-ba, sem a logba nem kerul`, async () => {
-    const dir = mkdtempSync(join(tmpdir(), "whh-"));
+    const dir = tempDir("whh-");
     const file = join(dir, "q.json"), logDir = join(dir, "inbox");
     const logs = [];
     const clock = { t: 1_000_000 };

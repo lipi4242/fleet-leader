@@ -3,6 +3,7 @@
 // sosem fut, tmux nem kell. A ket hid kulon URL-prefixet kap, ebbol latszik,
 // melyik folyamat hivott.
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
@@ -59,7 +60,7 @@ async function waitFor(pred, ms = 5000) {
 }
 
 test("8 versengo folyamat ugyanarra a zarra: pontosan egy ok", { timeout: 20000 }, async () => {
-  const lockDir = join(mkdtempSync(join(tmpdir(), "tlp-")), "locks");
+  const lockDir = join(tempDir("tlp-"), "locks");
   const code = `import(${JSON.stringify(LOCK)}).then(async (m) => {
     const l = m.acquireTokenLock({ lockDir: ${JSON.stringify(lockDir)}, token: "T" });
     console.log(l.ok ? "OK" : "HELD"); await new Promise((r) => setTimeout(r, 1500)); })`;
@@ -74,7 +75,7 @@ test("8 versengo folyamat ugyanarra a zarra: pontosan egy ok", { timeout: 20000 
 
 test("masodik hid ugyanarra a tokenre: exit 75, 0 Telegram-keres; az elso kilepeskor torol", { timeout: 30000 }, async () => {
   const tg = await fakeTelegram();
-  const root = mkdtempSync(join(tmpdir(), "tlb-"));
+  const root = tempDir("tlb-");
   const lockDir = join(root, "locks");
   const env = (who, extra = {}) => ({
     TELEGRAM_BOT_TOKEN: TOK, TMUX_SESSION: "x", TELEGRAM_GROUP_CHAT_ID: "-1",
@@ -108,7 +109,7 @@ test("masodik hid ugyanarra a tokenre: exit 75, 0 Telegram-keres; az elso kilepe
 
 test("elvett zar: a tulajdonos-ellenorzes exit 75-tel allitja le, az idegen zar marad", { timeout: 20000 }, async () => {
   const tg = await fakeTelegram();
-  const root = mkdtempSync(join(tmpdir(), "tls-"));
+  const root = tempDir("tls-");
   const lockPath = join(root, "locks", lockName(TOK));
   const a = run([BRIDGE], bridgeEnv(root, tg.url, { BRIDGE_LOCK_CHECK_MS: "1000" }));
   try {
@@ -126,7 +127,7 @@ test("elvett zar: a tulajdonos-ellenorzes exit 75-tel allitja le, az idegen zar 
 
 test("irhatatlan zar-konyvtar: exit 75, egysoros FATAL, nincs stack trace, nincs Telegram", { timeout: 20000 }, async () => {
   const tg = await fakeTelegram();
-  const root = mkdtempSync(join(tmpdir(), "tlw-"));
+  const root = tempDir("tlw-");
   writeFileSync(join(root, "fajl"), "x"); // konyvtar helyett fajl: rootkent is hibazik
   const r = await run([BRIDGE], bridgeEnv(root, tg.url, { BRIDGE_LOCK_DIR: join(root, "fajl", "locks") })).done;
   tg.close();

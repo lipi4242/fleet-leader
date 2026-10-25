@@ -105,7 +105,9 @@ class TestDoctorFix(unittest.TestCase):
                 mock.patch.object(doctor, "_sysctl_prop", return_value="active"), \
                 mock.patch.object(doctor, "UNIT_DIR", str(unit_dir)), \
                 mock.patch.object(doctor, "reconcile", return_value={"lines": ["restart végrehajtva"]}) as rc, \
-                mock.patch("fleet.signals.measure", side_effect=lambda _e: next(seq)):
+                mock.patch("fleet.signals.measure", side_effect=lambda _e: next(seq)), \
+                mock.patch("fleet.hookguard.claude_version", return_value="2.1.309 (Claude Code)"), \
+                mock.patch("fleet.envjel.check", return_value=(None, None)):  # nemakad-jel: a próba-pid nem valódi
             out = doctor.doctor(agent="probe-agent", fix=True)
         rc.assert_called_once()
         return out[-1]

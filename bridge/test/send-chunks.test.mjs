@@ -1,6 +1,7 @@
 // send.mjs darabolva (H1): 4096 felett (i/n) darabok sorban, az elso
 // nem-confirmed darabnal megall; --html 4096 felett exit 4, 0 keres.
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
@@ -56,7 +57,7 @@ function longText() {
 
 test("9000 kar -> 3 darab, reply_to csak az elson, 3 intent part-tal, 3 confirmed", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram();
-  const dir = mkdtempSync(join(tmpdir(), "sc-"));
+  const dir = tempDir("sc-");
   const text = longText();
   const r = await runSend(["--chat", "-100", "--reply-to", "7", "--", text],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir });
@@ -82,7 +83,7 @@ test("9000 kar -> 3 darab, reply_to csak az elson, 3 intent part-tal, 3 confirme
 
 test("2. darab ok:false -> a 3. nem megy, exit 1, stderr nevez", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram(["ok", "fail", "ok"]);
-  const dir = mkdtempSync(join(tmpdir(), "sc-"));
+  const dir = tempDir("sc-");
   const r = await runSend(["--chat", "-100", "--", longText()],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir });
   tg.close();
@@ -96,7 +97,7 @@ test("2. darab ok:false -> a 3. nem megy, exit 1, stderr nevez", { timeout: 1500
 
 test("2. darab timeout -> exit 5, harom lista, stdout csak a confirmed", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram(["ok", "hang", "ok"]);
-  const dir = mkdtempSync(join(tmpdir(), "sc-"));
+  const dir = tempDir("sc-");
   const r = await runSend(["--chat", "-100", "--", longText()],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir, SUBETHA_SEND_TIMEOUT_MS: "300" });
   tg.close();
@@ -109,7 +110,7 @@ test("2. darab timeout -> exit 5, harom lista, stdout csak a confirmed", { timeo
 
 test("--html es 5000 karakter -> exit 4, 0 keres", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram();
-  const dir = mkdtempSync(join(tmpdir(), "sc-"));
+  const dir = tempDir("sc-");
   const r = await runSend(["--chat", "-100", "--html", "--", "x".repeat(5000)],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir });
   tg.close();
@@ -121,7 +122,7 @@ test("--html es 5000 karakter -> exit 4, 0 keres", { timeout: 15000 }, async () 
 
 test("egydarabos uzenet hibaja pontosan: sendMessage failed: <error>, dupla elotag nelkul", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram(["fail"]);
-  const dir = mkdtempSync(join(tmpdir(), "sc-"));
+  const dir = tempDir("sc-");
   const r = await runSend(["--chat", "-100", "--", "rovid"],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir });
   tg.close();

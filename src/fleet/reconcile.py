@@ -382,6 +382,13 @@ def main() -> int:
     r = reconcile(observe="--observe" in sys.argv, fast="--fast" in sys.argv)
     for line in r["lines"]:
         print(line)
+    if r["mode"] == "ACT" and "--fast" not in sys.argv:
+        try:  # the capability tree, once a day; it never disturbs the reconcile
+            from fleet import capabilities
+            if capabilities.collect_if_due():
+                print("képességfa: begyűjtve")
+        except Exception as e:  # noqa: BLE001
+            print("képességfa: a begyűjtés hibája (%s)" % type(e).__name__)
     return 0
 
 

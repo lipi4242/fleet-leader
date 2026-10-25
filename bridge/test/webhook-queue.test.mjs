@@ -1,5 +1,6 @@
 // 3.1 jovahagyo webhook: tartos sor (ujraprobak, dedup, ujrainditas, notice).
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -15,7 +16,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const noSsl = () => (makeCert() ? false : "openssl nincs");
 
 function setup(over = {}) {
-  const dir = mkdtempSync(join(tmpdir(), "whq-"));
+  const dir = tempDir("whq-");
   const clock = { t: 1_000_000 };
   const logs = [];
   const make = (o = {}) => createWebhookQueue({ file: join(dir, "webhook-queue.json"),
@@ -90,7 +91,7 @@ test("a sorfajl a torzset tartja, a tokent nem; hibamezo tokenmentes", async () 
 });
 
 test("enqueue STRIKT: irhatatlan sorfajl -> dob (az offset igy nem lep)", () => {
-  const dir = mkdtempSync(join(tmpdir(), "whq-"));
+  const dir = tempDir("whq-");
   writeFileSync(join(dir, "fajl"), "x");
   const q = createWebhookQueue({ file: join(dir, "fajl", "q.json"), cfg: { url: "https://x/", token: TOKEN },
     logDir: dir, post: async () => ({ ok: true }) });

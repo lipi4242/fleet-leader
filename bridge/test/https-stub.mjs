@@ -1,6 +1,7 @@
 // Teszt-segedlet (nem *.test.mjs): onalairt https-stub a webhook-tesztekhez.
 // A cert/kulcs tmp konyvtarba kerul; openssl nelkul `null` -> a teszt skippel.
 import { spawnSync } from "node:child_process";
+import { tempDir } from "./tmp.mjs";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { createServer as createHttps } from "node:https";
 import { createServer as createNet } from "node:net";
@@ -10,7 +11,7 @@ import { join } from "node:path";
 let cached;
 export function makeCert() {
   if (cached !== undefined) return cached;
-  const dir = mkdtempSync(join(tmpdir(), "wh-cert-"));
+  const dir = tempDir("wh-cert-");
   const k = join(dir, "key.pem"), c = join(dir, "cert.pem");
   const r = spawnSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", k,
     "-out", c, "-days", "1", "-subj", "/CN=127.0.0.1", "-addext", "subjectAltName=IP:127.0.0.1"],

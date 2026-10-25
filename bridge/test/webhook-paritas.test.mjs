@@ -4,6 +4,7 @@
 // _TEXT=oneline:1500; a fixtura `rawBody` = a fork fetch-enek opts.body-ja) es fejlec-nevek,
 // es ugyanazok a szalba irt valaszok.
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -68,7 +69,7 @@ export async function runCase(c, { env = forkEnv } = {}) {
   try {
     const cfg = loadConfig({ TELEGRAM_BOT_TOKEN: "t", TELEGRAM_GROUP_CHAT_ID: FX.group,
       TELEGRAM_ALLOWLIST_IDS: FX.allow.join(","), TMUX_SESSION: `nincs-ilyen-${process.pid}`,
-      BRIDGE_STATE_DIR: mkdtempSync(join(tmpdir(), "whp-")), BRIDGE_REQUIRE_MENTION: "false",
+      BRIDGE_STATE_DIR: tempDir("whp-"), BRIDGE_REQUIRE_MENTION: "false",
       SUBETHA_TELEGRAM_API: tgs.url, ...env(`https://127.0.0.1:${stub.port}`) });
     const b = createBridge(cfg, { webhookCa: stub.ca });
     Object.assign(b.botIdentity, FX.bot);

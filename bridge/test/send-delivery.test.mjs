@@ -2,6 +2,7 @@
 // / timeoutnal `unknown` — a naplo sosem hallgat egy elinditott kuldesrol.
 // Egy helyi HTTP-szerver jatssza a Telegramot (SUBETHA_TELEGRAM_API).
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
@@ -51,7 +52,7 @@ function runSend(args, env) {
 
 test("confirmed: szandek + kimenet message_id-vel, exit 0, stdout a message_id", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram("ok");
-  const dir = mkdtempSync(join(tmpdir(), "sd-"));
+  const dir = tempDir("sd-");
   const { done } = runSend(["--chat", "-100", "--reply-to", "7", "--", "szia"],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir });
   const r = await done; tg.close();
@@ -68,7 +69,7 @@ test("confirmed: szandek + kimenet message_id-vel, exit 0, stdout a message_id",
 
 test("failed: a Telegram ok:false -> failed kimenet, exit 1", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram("fail");
-  const dir = mkdtempSync(join(tmpdir(), "sd-"));
+  const dir = tempDir("sd-");
   const { done } = runSend(["--chat", "-100", "--", "x"], { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir });
   const r = await done; tg.close();
   assert.equal(r.code, 1);
@@ -79,7 +80,7 @@ test("failed: a Telegram ok:false -> failed kimenet, exit 1", { timeout: 15000 }
 
 test("timeout: a keres elment, valasz nincs -> unknown kimenet, exit 5", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram("hang");
-  const dir = mkdtempSync(join(tmpdir(), "sd-"));
+  const dir = tempDir("sd-");
   const { done } = runSend(["--chat", "-100", "--", "x"],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir, SUBETHA_SEND_TIMEOUT_MS: "300" });
   const r = await done; tg.close();
@@ -91,7 +92,7 @@ test("timeout: a keres elment, valasz nincs -> unknown kimenet, exit 5", { timeo
 
 test("osszeomlas a keres utan (SIGKILL): a szandek-sor ott van, a statusz unknown", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram("hang");
-  const dir = mkdtempSync(join(tmpdir(), "sd-"));
+  const dir = tempDir("sd-");
   const { child, done } = runSend(["--chat", "-100", "--reply-to", "9", "--", "x"],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir });
   await tg.seen;            // a keres mar a "Telegramnal" van
@@ -108,7 +109,7 @@ test("osszeomlas a keres utan (SIGKILL): a szandek-sor ott van, a statusz unknow
 
 test("reakcio: ugyanaz a szandek/kimenet par, action=reaction, target_msg_id", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram("ok");
-  const dir = mkdtempSync(join(tmpdir(), "sd-"));
+  const dir = tempDir("sd-");
   const { done } = runSend(["--chat", "-100", "--react", "👍", "--message", "7"],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_INBOX_DIR: dir });
   const r = await done; tg.close();

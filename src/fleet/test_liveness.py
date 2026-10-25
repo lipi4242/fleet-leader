@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
 
 class OomHelperPreferenceTest(unittest.TestCase):
-    """The validating helper is used when present; `tee` remains the fallback.
+    """The validating helper is the only path; there is no `tee` fallback (FL-02).
 
     Ubuntu 26.04 ships sudo-rs, which refuses wildcards in command arguments:
 
@@ -120,11 +120,11 @@ class OomHelperPreferenceTest(unittest.TestCase):
         self.assertEqual(self.calls[0],
                          ["sudo", "-n", liveness.OOM_HELPER, "4242", "-600"])
 
-    def test_falls_back_to_tee_when_helper_absent(self):
-        # The negative control: on a box without the helper the old path must
-        # still be attempted, or upgrading fleet-leader would silently disable
-        # protection on every box that has the tee sudoers entry.
+    def test_no_tee_fallback_when_helper_absent(self):
+        # FL-02 (CISO 10-22): under classic sudo the old `tee /proc/[0-9]*/…` rule's `*`
+        # matches any characters, so it granted root-write to any file. The helper is the
+        # only path; without it nothing is attempted (not fatal, the caller counts it).
         liveness.Path.exists = lambda self: False
-        self.assertTrue(liveness.write_oom_adj(4242, -600))
-        self.assertEqual(self.calls[0],
-                         ["sudo", "-n", "tee", "/proc/4242/oom_score_adj"])
+        self.assertFalse(liveness.write_oom_adj(4242, -600))
+        self.assertEqual(self.calls, [])
+        self.assertFalse(any("tee" in c for call in self.calls for c in call))

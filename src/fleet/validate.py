@@ -35,7 +35,8 @@ def validate(rdir: Path) -> tuple[int, list[str]]:
         if e["status"] not in reg.AGENT_STATUSES:
             problems.append(f"{a}: ismeretlen status {e['status']!r}")
         rb = e.get("runbook")
-        # A runbook útvonala a registry könyvtárához relatív.
-        if rb and not (rdir / rb).exists():
-            problems.append(f"{a}: runbook hiányzik: {rb}")
+        # A runbook útvonala a registry könyvtárához VAGY az azt tartalmazó repó gyökeréhez
+        # relatív (egy `<repo>/fleet` registry `fleet/runbooks/<x>.md`-vel is hivatkozhat).
+        if rb and not any((base / rb).exists() for base in (rdir, rdir.parent)):
+            problems.append(f"{a}: runbook hiányzik: {rb} (keresve: {rdir}, {rdir.parent})")
     return len(seen), problems

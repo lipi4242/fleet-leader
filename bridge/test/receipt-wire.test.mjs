@@ -1,5 +1,6 @@
 // Erkezes-nyugta (3.2) bekotese: deliverer-horgok, config-kapcsolo, a hid-drot.
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -18,7 +19,7 @@ function deliverer(dir, inject, hooks) {
 }
 
 test("deliverer: sikertelen inject -> pending, onInjected nem hivodik; retryPending utan egyszer", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "rw-"));
+  const dir = tempDir("rw-");
   let n = 0; const calls = [];
   const failThenOk = () => (n++ === 0 ? { ok: false, error: "x" } : { ok: true });
   const d = deliverer(dir, failThenOk, {
@@ -30,7 +31,7 @@ test("deliverer: sikertelen inject -> pending, onInjected nem hivodik; retryPend
 });
 
 test("deliverer: horog-hiba sosem dob, a kezbesites megy", () => {
-  const dir = mkdtempSync(join(tmpdir(), "rw-"));
+  const dir = tempDir("rw-");
   const d = deliverer(dir, () => ({ ok: true }), {
     beforeInject: () => { throw new Error("a"); }, onInjected: () => { throw new Error("b"); } });
   d.deliver(LINE);
@@ -53,7 +54,7 @@ test("config: BRIDGE_RECEIPT nelkul KI; =1-gyel BE, utvonalak", () => {
 });
 
 test("wire KI: nincs horog, nincs receipts-fajl", () => {
-  const dir = mkdtempSync(join(tmpdir(), "rw-"));
+  const dir = tempDir("rw-");
   const w = createReceiptWire(loadConfig({ ...ENV, BRIDGE_STATE_DIR: dir }), { tg: async () => {} });
   assert.deepEqual(w.hooks, {});
   w.start(); w.check();
@@ -62,7 +63,7 @@ test("wire KI: nincs horog, nincs receipts-fajl", () => {
 });
 
 test("wire BE: deliver -> rogzites; ket deadline utan unconfirmed notice + riasztas + egy 😨 (a ⚠️ nem engedett Telegram-reakcio)", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "rw-"));
+  const dir = tempDir("rw-");
   mkdirSync(join(dir, "tr", "-p"), { recursive: true });
   writeFileSync(join(dir, "session.id"), "sid\n");
   writeFileSync(join(dir, "tr", "-p", "sid.jsonl"), "");
@@ -111,7 +112,7 @@ const notices = (dir) => readdirSync(join(dir, "telegram-inbox")).filter((f) => 
   .filter((r) => r.type === "notice");
 
 test("wire: nincs transzkript, ket uzenet -> 2 notice, 1 riasztas, 0 reakcio", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "rw-"));
+  const dir = tempDir("rw-");
   const o = wired(dir, { transcript: false });
   o.d.deliver(LINE);
   o.d.deliver("[Telegram inbound | J id=1 | chat=-100 | msg=8]: y");
@@ -125,7 +126,7 @@ test("wire: nincs transzkript, ket uzenet -> 2 notice, 1 riasztas, 0 reakcio", a
 });
 
 test("wire: megjelent sor -> inbound_confirmed notice, nincs riasztas", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "rw-"));
+  const dir = tempDir("rw-");
   const o = wired(dir);
   o.d.deliver(LINE);
   writeFileSync(join(dir, "tr", "-p", "sid.jsonl"),
@@ -140,7 +141,7 @@ test("wire: megjelent sor -> inbound_confirmed notice, nincs riasztas", async ()
 });
 
 test("wire: tobb stale egy koron belul -> EGY osszesito riasztas, 0 reakcio, notice soronkent", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "rw-"));
+  const dir = tempDir("rw-");
   const o = wired(dir);
   o.d.deliver(LINE);
   o.d.deliver("[Telegram inbound | J id=1 | chat=-100 | msg=8]: y");

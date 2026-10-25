@@ -1,5 +1,6 @@
 // A kezbesitesi naplo semaja es olvasoja (docs/delivery-log.md).
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +10,7 @@ import {
   resolveLogDir, LOG_VERSION,
 } from "../lib/delivery-log.mjs";
 
-const tmp = () => mkdtempSync(join(tmpdir(), "dl-"));
+const tmp = () => tempDir("dl-");
 const DAY = "2026-10-14";
 const T = Date.parse(`${DAY}T10:00:00Z`);
 

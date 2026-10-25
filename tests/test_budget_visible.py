@@ -76,6 +76,15 @@ class TestStatusAndSessionStartShowBudget(unittest.TestCase):
         self.assertIn("restart-keret kimerült", r.stdout)
         self.assertEqual((self.home / ".config" / "probe-agent" / "session.id").read_text(), "s-1")
 
+    def test_session_start_hook_also_reads_thufir_agent(self):
+        """L23: a régebbi unitok THUFIR_AGENT-et exportálnak; a hook nekik is rögzíti a session.id-t."""
+        env = {"PATH": os.environ["PATH"], "HOME": str(self.home), "THUFIR_AGENT": "old-agent",
+               "CLAUDE_CODE_SESSION_ID": "s-9"}
+        r = subprocess.run(["sh", str(ROOT / "bin" / "capture-session-id.sh")], env=env,
+                           capture_output=True, text=True, timeout=30)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual((self.home / ".config" / "old-agent" / "session.id").read_text(), "s-9")
+
     def test_session_start_hook_silent_when_budget_ok(self):
         (self.st / "probe-agent.json").write_text(json.dumps({"restarts": []}))
         env = {"PATH": os.environ["PATH"], "HOME": str(self.home), "FLEET_AGENT": "probe-agent",

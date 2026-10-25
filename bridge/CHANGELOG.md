@@ -2,6 +2,11 @@
 
 ## Unreleased — több nevesített webhook-cél
 
+- **F-17 — engedélykérő ablaknál nincs átadás.** Az inject előtt a híd megnézi a
+  pane alját (`lib/pane-guard.mjs`). Ha egy „Do you want to …?” kérdés és egy „1. Yes”
+  opció áll ott, se a szöveg, se az Enter nem megy ki, mert ezek a felhasználó nevében
+  válaszolnának. A sor a pending-sorba kerül, és a riasztás megnevezi az okot.
+  Olvashatatlan pane esetén a régi út fut.
 - **`SUBETHA_WEBHOOKS`** — célonként saját URL/token/fejléc, illesztés
   (`reply` | `reaction` | `footer`), `_FROM`-szűrő, saját tartós sor és
   újrapróba, `target` mező a `webhook_*` notice-okon, új `webhook_skipped`.

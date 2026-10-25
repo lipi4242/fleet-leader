@@ -1,6 +1,7 @@
 // A hid tiszta reszei (lines/handlers/inbox) es az osszedrotozott hid egy
 // update-en at. A poller NEM indul: a main() csak futtatva hivodik.
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -117,7 +118,7 @@ test("handleReaction: target_msg_id, msg_id null, csak az uj emojik", () => {
 });
 
 test("inbound logger: irhatatlan inbox -> nem dob, last_delivery_log_error a health-ben", () => {
-  const dir = mkdtempSync(join(tmpdir(), "br-"));
+  const dir = tempDir("br-");
   const inbox = join(dir, "inbox");
   writeFileSync(inbox, "nem konyvtar, hanem fajl");
   const healthFile = join(dir, "health.json");
@@ -127,7 +128,7 @@ test("inbound logger: irhatatlan inbox -> nem dob, last_delivery_log_error a hea
 });
 
 test("createBridge: egy update -> events-sor + inbound kezbesitesi sor, kimenet nelkul megvalaszolatlan", () => {
-  const stateDir = mkdtempSync(join(tmpdir(), "br-"));
+  const stateDir = tempDir("br-");
   const cfg = loadConfig({ TELEGRAM_BOT_TOKEN: "t", TELEGRAM_GROUP_CHAT_ID: "-100",
     TELEGRAM_ALLOWLIST_IDS: "1", TMUX_SESSION: `nincs-ilyen-${process.pid}`,
     BRIDGE_STATE_DIR: stateDir, BRIDGE_REQUIRE_MENTION: "false" });

@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import { injectLine } from "../lib/inject.mjs";
 
 // Fake spawnSync: rogziti a hivasokat, es a megadott eredmenyeket adja vissza.
+// A pane-olvasas (capture-pane, F-17 or) ures pane-t ad, es nem szamit hivasnak.
 function fakeSpawn(results) {
   const calls = [];
   const fn = (cmd, args, opts) => {
+    if (args[0] === "capture-pane") return { status: 0, stdout: "" };
     calls.push({ cmd, args, opts });
     return results[calls.length - 1] ?? { status: 0 };
   };
@@ -64,7 +66,10 @@ test("injectLine: a sor-tartalom verbatim megy at (nincs csonkitas/idezojelezes)
 // varakozas kell; a sorrendet egy kozos esemenynaplo bizonyitja.
 function recorder() {
   const ev = [];
-  const spawn = (cmd, args) => { ev.push(["spawn", args.at(-1)]); return { status: 0 }; };
+  const spawn = (cmd, args) => {
+    if (args[0] === "capture-pane") return { status: 0, stdout: "" };
+    ev.push(["spawn", args.at(-1)]); return { status: 0 };
+  };
   const wait = (ms) => ev.push(["wait", ms]);
   return { ev, spawn, wait };
 }
@@ -85,7 +90,10 @@ test("injectLine: hosszu sornal varakozas a ket send-keys kozott", () => {
 
 test("injectLine: hosszu sornal, ha a szoveg nem ment ki, nincs varakozas se Enter", () => {
   const ev = [];
-  const spawn = () => { ev.push("spawn"); return { status: 1, stderr: "x" }; };
+  const spawn = (cmd, args) => {
+    if (args[0] === "capture-pane") return { status: 0, stdout: "" };
+    ev.push("spawn"); return { status: 1, stderr: "x" };
+  };
   const res = injectLine("s", "x".repeat(6067), spawn, () => ev.push("wait"));
   assert.equal(res.ok, false);
   assert.deepEqual(ev, ["spawn"]);

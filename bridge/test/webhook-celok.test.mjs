@@ -1,6 +1,7 @@
 // Tobb nevesitett webhook-cel: env-szerzodes, egyuttelés a `default` cellal,
 // sorrend (_UNLESS) kimerult fuggoseg utan, fail-closed szuro, notice `target`.
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, readdirSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -38,7 +39,7 @@ test("celok: hibas beallitas -> KI okkal, a reason-ben se token, se URL; a tobbi
 });
 
 function wire(e, post) {
-  const stateDir = mkdtempSync(join(tmpdir(), "whc-"));
+  const stateDir = tempDir("whc-");
   const cfg = loadConfig({ TELEGRAM_BOT_TOKEN: "t", TELEGRAM_GROUP_CHAT_ID: "-100", TELEGRAM_ALLOWLIST_IDS: "1",
     TMUX_SESSION: "s", BRIDGE_STATE_DIR: stateDir, ...e });
   const replies = [], warns = [], clock = { t: 1_000_000 };

@@ -1,5 +1,8 @@
 """`fleet doctor` — a négy jel emberi olvasatban, plusz a telepítési tények:
-unit engedélyezve/aktív, drop-in megvan-e, híd-verzió, Claude-fiók.
+unit engedélyezve/aktív, drop-in megvan-e, híd-verzió, Claude-fiók, és a fail-open
+hookok (F-39: onFailure:"block" hiányzik, vagy a Claude Code régebbi 2.1.295-nél) — csak jelzés —,
+és hogy a futó claude env-jében van-e felügyelet nélküli jel a nemakad hooknak (envjel.py).
+PROXY-jel (paneor.py): a unit claude binárisában megvannak-e a híd pane-őrének mintái (F-17).
 `--fix` = reconcile egy ágensre, végrehajtással (ez az operátor kifejezett
 parancsa, ezért nem vár a controller-fájlra).
 
@@ -14,8 +17,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from fleet import dup, signals, maintenance, pane
-from fleet.health import HEALTHY, UNHEALTHY, MARK, judge, worst
+from fleet import dup, signals, maintenance, pane, hookguard, envjel, paneor
+from fleet.health import HEALTHY, UNHEALTHY, UNKNOWN_H, MARK, judge, worst
 from fleet.registry import load_agents, agents_for_host, local_host, is_dormant
 from fleet.bridge import read_stamp, bridge_version
 from fleet.install import UNIT_DIR
@@ -31,6 +34,11 @@ def _report(agent: str, facts: list, problems: list, s: dict, j: dict | None = N
             "unknown": j["unknown"], "signals": s}
 
 
+def _workdir(entry: dict) -> Path:
+    """The agent repo: the unit's WorkingDirectory, %h = this user's HOME."""
+    return Path(str(entry.get("workdir") or "").replace("%h", str(Path.home())))
+
+
 def _sysctl_prop(unit: str, prop: str) -> str | None:
     try:
         r = subprocess.run(["systemctl", "--user", "show", "-p", prop, "--value", unit],
@@ -43,7 +51,9 @@ def _sysctl_prop(unit: str, prop: str) -> str | None:
 def assess(entry: dict, m: dict, st: dict, *, unit_active: str | None,
            unit_enabled: str | None, drop_in: bool, bridge_installed: str | None,
            bridge_current: str, locked: bool, pane_dialog: str | None = None,
-           now: float | None = None) -> dict:
+           now: float | None = None, hook_problems: list[str] = (),
+           claude_problem: str | None = None, claude_unknown: str | None = None,
+           env_check: tuple = (None, None)) -> dict:
     """Pure: egészség (health.py) + a tények listája."""
     facts = []
     problems = []
@@ -60,6 +70,9 @@ def assess(entry: dict, m: dict, st: dict, *, unit_active: str | None,
         facts.append(f"{k:9} {v['state']:13} {j['per_signal'][k][0]:9} {v['detail']}")
     if pane_dialog:
         problems.append(pane_dialog)
+    problems += list(hook_problems) + ([claude_problem] if claude_problem else [])  # F-39, jelzés
+    if env_check[0]:
+        problems.append(env_check[0])  # nemakad: nincs felügyelet nélküli jel
     if m["pollers"]:
         problems.append(f"telegram-plugin poller: {m['pollers']}")
     if not drop_in:
@@ -79,7 +92,19 @@ def assess(entry: dict, m: dict, st: dict, *, unit_active: str | None,
     rss = s["process"]["data"].get("rss_mb")
     if rss:
         facts.append(f"memória: {rss} MB")
-    return _report(entry["agent"], facts, problems, s, j)
+    rep = _report(entry["agent"], facts, problems, s, j)
+    for unk in (claude_unknown, env_check[1]):  # N2: not measurable is not green
+        if not unk:
+            continue
+        rep["unknown"] = rep["unknown"] + [unk]
+        rep["health"] = worst([rep["health"], UNKNOWN_H])
+        rep["ok"] = rep["health"] == HEALTHY
+    return rep
+
+
+def hook_problems_for(entry: dict) -> list[str]:
+    """F-39: the agent repo's hooks and its Claude home's user-level hooks (N1)."""
+    return hookguard.hook_problems(_workdir(entry)) + hookguard.user_hook_problems(signals.claude_home(entry))
 
 
 def doctor(agent: str | None = None, fix: bool = False) -> list[dict]:
@@ -91,6 +116,9 @@ def doctor(agent: str | None = None, fix: bool = False) -> list[dict]:
         if not agent or fe["agent"] == agent:
             out.append(_report(fe["agent"], [f"registry host: {fe['host']} · ez a gép: {host}"],
                                [dup.dup_message(fe, pid, host)], {}))
+    ver = hookguard.claude_version()
+    claude_problem, claude_unknown = hookguard.version_problem(ver), hookguard.version_unknown(ver)
+    pane_proxy = [x for x in [paneor.problem(hookguard.CLAUDE_BIN)] if x]  # F-17, gépenként egyszer
     for e in agents_for_host(host, agents):
         if agent and e["agent"] != agent:
             continue
@@ -108,7 +136,11 @@ def doctor(agent: str | None = None, fix: bool = False) -> list[dict]:
                      bridge_current=bridge_version(),
                      locked=maintenance.is_locked(e["agent"]),
                      pane_dialog=pane.pane_dialog(e["session"])
-                     if m["signals"]["process"]["state"] == "up" else None)
+                     if m["signals"]["process"]["state"] == "up" else None,
+                     hook_problems=hook_problems_for(e) + pane_proxy,
+                     claude_problem=claude_problem, claude_unknown=claude_unknown,
+                     env_check=envjel.check(m["signals"]["process"]["data"].get("pid"))
+                     if m["signals"]["process"]["state"] == "up" else (None, None))
         out.append(rep)
     if fix and agent:
         from fleet import reconcile as rc

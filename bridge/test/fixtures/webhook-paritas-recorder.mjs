@@ -10,6 +10,7 @@
 // Rogzitve: a szerver-kerések (vegpont, fejlec-nevek, a nyers torzs) es a
 // szalba irt valaszok. Kitalalt id-k; a token nem kerul a kimenetbe.
 import { spawnSync } from "node:child_process";
+import { tempDir } from "../tmp.mjs";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -117,7 +118,7 @@ function child() {
 async function main() {
   const [forkDir, outPath] = process.argv.slice(2);
   if (!forkDir || !outPath) { console.error("hasznalat: <fork-hid-konyvtar> <kimenet.json>"); process.exit(64); }
-  const tmp = mkdtempSync(join(tmpdir(), "whrec-")), raw = join(tmp, "raw.json");
+  const tmp = tempDir("whrec-"), raw = join(tmp, "raw.json");
   const res = spawnSync(process.execPath, ["--import", fileURLToPath(import.meta.url), join(resolve(forkDir), "bridge.mjs")], {
     env: { PATH: tmp, HOME: tmp, REC_CHILD: "1", REC_OUT: raw, TELEGRAM_BOT_TOKEN: "rec", TELEGRAM_GROUP_CHAT_ID: String(GROUP),
       TELEGRAM_ALLOWLIST_IDS: `${J},${K}`, TMUX_SESSION: "nincs-ilyen-rec", BRIDGE_STATE_DIR: join(tmp, "state"),

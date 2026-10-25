@@ -66,8 +66,8 @@ def seed_global(doc: dict, workdir: str) -> list[str]:
 
 
 def seed_settings(doc: dict, hook_cmd: str) -> list[str]:
-    """Pure: Bypass-elfogadás + a session-id hook (ha bármilyen útvonalon
-    már ott van egy capture-session-id.sh, nem veszünk fel másodikat)."""
+    """Pure: Bypass-elfogadás + a session-id hook: pontosan egy, a mi checkoutunk szkriptje
+    (egy máshonnan bejegyzett capture-session-id.sh-t a sajátunkra cserélünk)."""
     ch = []
     if doc.get("skipDangerousModePermissionPrompt") is not True:
         doc["skipDangerousModePermissionPrompt"] = True
@@ -81,6 +81,19 @@ def seed_settings(doc: dict, hook_cmd: str) -> list[str]:
     if not have:
         groups.append({"hooks": [{"type": "command", "command": hook_cmd}]})
         ch.append(f"SessionStart hook: {hook_cmd}")
+        return ch
+    # Egy hook marad, és az a miénk: egy másik checkoutból bejegyzett (régi) hook nem
+    # feltétlenül ismeri a FLEET_AGENT-et (L23), ezért a sajátunkra cseréljük.
+    for i, h in enumerate(have):
+        if i == 0 and h.get("command") != hook_cmd:
+            ch.append(f"SessionStart hook: {h.get('command')} -> {hook_cmd}")
+            h["command"] = hook_cmd
+        elif i > 0:
+            for g in groups:
+                if isinstance(g, dict) and h in (g.get("hooks") or []):
+                    g["hooks"].remove(h)
+            ch.append(f"SessionStart hook: dupla törölve ({h.get('command')})")
+    hooks["SessionStart"] = [g for g in groups if not (isinstance(g, dict) and g.get("hooks") == [])]
     return ch
 
 

@@ -16,7 +16,11 @@
 //     elkuldetlenul ul a promptban, a kovetkezo sor Enterje viszi el ketto
 //     egy bejegyzesben (elo proba: varakozas nelkul 5/135 elnyelt Enter, vele 0/120).
 //     Egy Enter megy ki, nem ketto: a dupla Enter szukseget a meres nem igazolta.
+//   - ENGEDELYKERO ABLAKNAL (lib/pane-guard.mjs, F-17) semmi nem megy ki: se a
+//     szoveg, se az Enter — {ok:false, dialog:true}, a hivo pending-sorba teszi.
+//     Ha a pane nem olvashato, a regi ut fut (a send-keys ugyis elbukna).
 import { spawnSync } from "node:child_process";
+import { capturePane, permissionDialog } from "./pane-guard.mjs";
 
 export const LONG_LINE_CHARS = 1000;
 export const PASTE_SETTLE_MS = 300;
@@ -32,6 +36,10 @@ export function sleepMs(ms) {
 // A `spawn` parameter TESZT-varrat (injektalt spawnSync), alapertelmezetten
 // a valos node:child_process spawnSync; a `wait` szinten varrat (sleepMs).
 export function injectLine(session, line, spawn = spawnSync, wait = sleepMs) {
+  if (permissionDialog(capturePane(session, spawn))) {
+    return { ok: false, dialog: true,
+      error: "engedélykérő ablak áll a pane-ben — nem írok bele, nem nyomok Entert (F-17)" };
+  }
   const a = spawn("tmux", ["send-keys", "-t", session, "-l", "--", line], {
     encoding: "utf8",
   });

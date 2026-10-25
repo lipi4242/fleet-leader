@@ -1,6 +1,7 @@
 // _UNLESS-sorrend a review forgatokonyveire (szulo-kimenet a sorfajlbol, fail-closed),
 // egy szulo = egy fuggo, es a valasz-meret bajtban (overflow).
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -28,7 +29,7 @@ const footCtx = { kind: "message", replyToFromId: 99, botId: 99, replyToText: "x
 test("UNLESS-res: a draft mar lefutott (ok:true), a b-sor irasa csak az ujrajatszaskor sikerul -> b NEM hiv", async () => {
   const posts = [];
   const { w, cfg, replies, inbox } = (() => {
-    const stateDir = mkdtempSync(join(tmpdir(), "whc-"));
+    const stateDir = tempDir("whc-");
     const e = { TELEGRAM_BOT_TOKEN: "t", TELEGRAM_GROUP_CHAT_ID: "-100", TELEGRAM_ALLOWLIST_IDS: "1",
       TMUX_SESSION: "s", BRIDGE_STATE_DIR: stateDir, ...chainEnv() };
     const c = loadConfig(e), rep = [];
@@ -50,7 +51,7 @@ test("UNLESS-res: a draft mar lefutott (ok:true), a b-sor irasa csak az ujrajats
 
 test("UNLESS: a szulo kesz, de a kimenete ismeretlen -> fail-closed skip, naplozva", async () => {
   const posts = [];
-  const stateDir = mkdtempSync(join(tmpdir(), "whc-"));
+  const stateDir = tempDir("whc-");
   mkdirSync(join(stateDir, "telegram-state"), { recursive: true });
   writeFileSync(join(stateDir, "telegram-state", "webhook-queue-a.json"), JSON.stringify({ items: [], done: ["-100:7"] }));
   const cfg = loadConfig({ TELEGRAM_BOT_TOKEN: "t", TELEGRAM_GROUP_CHAT_ID: "-100", TELEGRAM_ALLOWLIST_IDS: "1",

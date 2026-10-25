@@ -1,11 +1,12 @@
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MediaQueue } from "../lib/mediaqueue.mjs";
 
-const qfile = () => join(mkdtempSync(join(tmpdir(), "se-")), "q.json");
+const qfile = () => join(tempDir("se-"), "q.json");
 
 test("enqueue persists synchronously, worker drains one at a time", async () => {
   const p = qfile();
@@ -43,7 +44,7 @@ test("reentrant drain does not double-process", async () => {
 
 test("enqueue THROWS when the queue file cannot be written", () => {
   // Sima FAJL a konyvtar-komponens helyen -> ENOTDIR, a mkdir sem menti meg.
-  const dir = mkdtempSync(join(tmpdir(), "se-"));
+  const dir = tempDir("se-");
   const fileAsDir = join(dir, "not-a-dir");
   writeFileSync(fileAsDir, "x");
   const q = new MediaQueue(join(fileAsDir, "q.json"), async () => {});
@@ -53,7 +54,7 @@ test("enqueue THROWS when the queue file cannot be written", () => {
 });
 
 test("drain: sikeres feldolgozas + irhatatlan sorfajl -> az elem NEM vesz el", async () => {
-  const d = mkdtempSync(join(tmpdir(), "se-"));
+  const d = tempDir("se-");
   const p = join(d, "q.json");
   const seen = [];
   const q = new MediaQueue(p, async (i) => { seen.push(i.id); });

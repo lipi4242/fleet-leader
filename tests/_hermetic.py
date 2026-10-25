@@ -32,8 +32,23 @@ def snapshot(root: Path) -> dict[str, tuple[int, int]]:
     return out
 
 
+def changed(before: dict, after: dict) -> list[str]:
+    """What the run changed under GUARDED. `state/**/*.lock` is the live box's (the
+    fleet-reconcile timer rewrites reconcile.lock), not a test write: ignored."""
+    def live(k: str) -> bool:
+        return k.startswith("state/") and k.endswith(".lock")
+    return sorted(k for k in set(after) | set(before) if after.get(k) != before.get(k) and not live(k))
+
+
 GUARDED = REAL_HOME / ".config" / "fleet"
 BEFORE = snapshot(GUARDED)
+
+# Every temp folder of the run (tempfile here and TMPDIR for child processes) lands in one
+# per-run folder, removed at exit (2026-10-23: test leftovers filled the shared tmp quota).
+REAL_TMP = tempfile.gettempdir()
+_run_tmp = tempfile.mkdtemp(prefix="fleet-test-tmp-")
+atexit.register(shutil.rmtree, _run_tmp, True)
+os.environ["TMPDIR"] = tempfile.tempdir = _run_tmp
 
 if not os.environ.get("_FLEET_TEST_HOME"):
     _tmp = tempfile.mkdtemp(prefix="fleet-test-home-")

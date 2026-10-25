@@ -1,6 +1,7 @@
 // H5: egy tokenre EGY getUpdates-hivo ezen a gepen. Egysegszint (lib/token-lock)
 // es folyamatszint (ket valodi `node bridge.mjs`, hamis Telegrammal).
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, renameSync, readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -8,7 +9,7 @@ import { join } from "node:path";
 import { acquireTokenLock, lockName, isBridgePid, stillHeld } from "../lib/token-lock.mjs";
 import { loadConfig } from "../lib/config.mjs";
 
-const tmp = () => mkdtempSync(join(tmpdir(), "tl-"));
+const tmp = () => tempDir("tl-");
 const live = () => true;
 const dead = () => false;
 

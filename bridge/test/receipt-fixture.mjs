@@ -1,5 +1,6 @@
 // Kozos tmp-kornyezet a nyugta-tesztekhez (nem teszt-fajl: a glob nem futtatja).
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { tempDir } from "./tmp.mjs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createReceipts } from "../lib/receipt.mjs";
@@ -8,7 +9,7 @@ export const LINE = "[Telegram inbound | J id=1 | chat=-100 | msg=7]: x";
 export const user = (text) => JSON.stringify({ type: "user", message: { role: "user", content: text } }) + "\n";
 
 export function setup(sid = "s1") {
-  const dir = mkdtempSync(join(tmpdir(), "receipt-"));
+  const dir = tempDir("receipt-");
   const root = join(dir, "projects");
   mkdirSync(join(root, "-proj"), { recursive: true });
   const sessionIdFile = join(dir, "session.id");

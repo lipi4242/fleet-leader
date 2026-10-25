@@ -30,6 +30,11 @@ class TestRender(unittest.TestCase):
         self.assertIn("--strict-mcp-config --mcp-config %h/.config/fleet/mcp-empty.json", u)
         self.assertNotIn("@@", u)
 
+    def test_ask_user_question_is_disallowed(self):
+        # FL-03 (CISO 10-22): the bridge sends an unconditional Enter after every injected
+        # line, so a menu would be answered for the user; the ban must not live only in a prompt.
+        self.assertIn("--disallowedTools AskUserQuestion", render.render_unit(_entry(rc_name="pr"), template=TMPL))
+
     def test_proactive_gets_heartbeat_rm_and_seeded_startup(self):
         u = render.render_unit(_entry(), template=TMPL, fleet_root="%h/fleet-leader")
         self.assertIn("ExecStartPre=/bin/rm -f /home/x/probe/data/state/orchestrator-heartbeat.json", u)

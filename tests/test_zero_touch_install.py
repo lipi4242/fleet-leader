@@ -55,10 +55,16 @@ class TestFirstRunDialogs(Base):
         self.assertTrue(cmds[0].endswith("/bin/capture-session-id.sh"))
         self.assertTrue(Path(cmds[0]).is_file())
 
-    def test_existing_hook_elsewhere_is_not_duplicated(self):
+    def test_legacy_hook_elsewhere_is_replaced_not_duplicated(self):
+        """L23: a régi (más checkoutból bejegyzett) hook csak THUFIR_AGENT-et ismert, így az új,
+        FLEET_AGENT-es ágensnek nem lett session.id. A sajátunkra cseréljük: egy hook marad."""
         doc = {"hooks": {"SessionStart": [{"hooks": [{"type": "command",
                                                       "command": "/opt/f/bin/capture-session-id.sh"}]}]}}
-        self.assertNotIn("SessionStart hook", " ".join(claude_firstrun.seed_settings(doc, "/new/x.sh")))
+        ch = claude_firstrun.seed_settings(doc, "/new/bin/capture-session-id.sh")
+        cmds = [h["command"] for g in doc["hooks"]["SessionStart"] for h in g["hooks"]]
+        self.assertEqual(cmds, ["/new/bin/capture-session-id.sh"])
+        self.assertIn("SessionStart hook", " ".join(ch))
+        self.assertEqual(claude_firstrun.seed_settings(doc, "/new/bin/capture-session-id.sh"), [])
 
     def test_invalid_json_is_never_overwritten(self):
         (self.home / ".claude.json").write_text("{nem json")

@@ -24,8 +24,7 @@ def _under(p: Path, root: Path) -> bool:
 class TestHermeticGuard(unittest.TestCase):
     def test_real_home_config_fleet_unchanged(self):
         after = _hermetic.snapshot(_hermetic.GUARDED)
-        changed = sorted(k for k in set(after) | set(_hermetic.BEFORE)
-                         if after.get(k) != _hermetic.BEFORE.get(k))
+        changed = _hermetic.changed(_hermetic.BEFORE, after)  # live state/*.lock is not ours
         self.assertEqual(changed, [], f"a futás írt ide: {_hermetic.GUARDED}")
 
     def test_paths_do_not_point_into_real_home(self):

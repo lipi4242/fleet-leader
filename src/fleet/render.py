@@ -48,7 +48,10 @@ STRICT_MCP = "--strict-mcp-config --mcp-config %h/.config/fleet/mcp-empty.json"
 
 def claude_flags(entry: dict) -> str:
     """Pure: a claude bináris kapcsolói (a --resume és a --model nélkül)."""
-    parts = ["--dangerously-skip-permissions", f"--remote-control {entry['rc_name']}"]
+    # --disallowedTools AskUserQuestion (FL-03): the bridge presses Enter after every injected
+    # line, so a question menu would be answered for the user; the ban is enforced, not prompted.
+    parts = ["--dangerously-skip-permissions", f"--remote-control {entry['rc_name']}",
+             "--disallowedTools AskUserQuestion"]
     if entry.get("strict_mcp", True):
         parts.append(STRICT_MCP)
     return " ".join(parts)

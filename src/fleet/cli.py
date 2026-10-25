@@ -250,6 +250,11 @@ def build_parser() -> argparse.ArgumentParser:
     x = sub.add_parser("wait-up", help="megvárja, hogy a leállított ágens visszajöjjön (megmondja, mikor várható)"); x.add_argument("agent"); x.add_argument("--timeout", type=int, default=420, metavar="MP"); x.set_defaults(fn=cmd_wait_up)
     x = sub.add_parser("restart", help="EGY ágens újraindítása (zár feloldva) + postcheck"); x.add_argument("agent"); x.set_defaults(fn=cmd_restart)
     sub.add_parser("validate", help="registry-konzisztencia").set_defaults(fn=cmd_validate)
+    c = sub.add_parser("capabilities", help="képességfa: a box ágenseinek jóváhagyott exportja (collect) és keresés (find --as)")
+    cs = c.add_subparsers(dest="sub", required=True)
+    x = cs.add_parser("collect"); x.add_argument("--json", action="store_true"); x.set_defaults(fn=cmd_capabilities)
+    x = cs.add_parser("find"); x.add_argument("--as", dest="as_agent", required=True); x.add_argument("--json", action="store_true")
+    x.add_argument("query"); x.set_defaults(fn=cmd_capabilities)
     x = sub.add_parser("render", help="unit szövege a registryből"); x.add_argument("agent"); x.set_defaults(fn=cmd_render)
     x = sub.add_parser("install", help="unit + felügyelet telepítése, indítás, postcheck (0 kész · 3 függő · 1 hiba, visszaállítva)"); x.add_argument("agent"); x.add_argument("--json", action="store_true"); x.set_defaults(fn=cmd_install)
     x = sub.add_parser("preflight", help="telepíthető-e a repó"); x.add_argument("agent"); x.set_defaults(fn=cmd_preflight)
@@ -273,6 +278,25 @@ def build_parser() -> argparse.ArgumentParser:
     x = sub.add_parser("upgrade", help="a repó fleet-fájljainak frissítése"); x.add_argument("repo"); x.set_defaults(fn=cmd_upgrade)
     x = sub.add_parser("release", help="a telepített release-tuple"); x.add_argument("--show", action="store_true"); x.set_defaults(fn=cmd_release)
     return p
+
+
+def cmd_capabilities(a) -> int:
+    from fleet import capabilities as caps
+    if a.sub == "collect":
+        out = caps.collect()
+        print(json.dumps(out, ensure_ascii=False, indent=1) if a.json else
+              "\n".join("%s: %s" % (k, v.get("error") or "%d tétel, %d kiszűrve" % (len(v["capabilities"]), v["dropped"]))
+                        for k, v in out.items()) or "nincs ágens ezen a boxon")
+        return 0
+    try:
+        res = caps.find(a.as_agent, a.query)
+    except caps.Refused as e:
+        print(json.dumps({"schema": 1, "error": str(e)}) if a.json else "fleet: %s" % e)
+        return 2
+    print(json.dumps(res, ensure_ascii=False) if a.json else
+          "\n".join("%s · %s [%s] %s" % (r["agent"], r["id"], r["availability"], "; ".join(r["intent"]))
+                    for r in res["results"]) or "nincs találat")
+    return 0
 
 
 def main(argv=None) -> int:

@@ -1,6 +1,7 @@
 // Szigoru argv (H3): ismeretlen kapcsolo exit 64 Telegram-hivas nelkul;
 // --instance elavultkent elfogadva (2.0.x kompat), notice sor a naploba.
 import test from "node:test";
+import { tempDir } from "./tmp.mjs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
@@ -75,7 +76,7 @@ test("ertek-kapcsolo erteke nem lehet --kapcsolo (UsageError, code 1)", () => {
 
 test("folyamat: --bogus -> exit 64, a Telegram 0 kerest kap", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram();
-  const dir = mkdtempSync(join(tmpdir(), "sa-"));
+  const dir = tempDir("sa-");
   const r = await runSend(["--chat", "1", "--bogus", "x", "--", "szoveg"],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_STATE_DIR: dir });
   const hit = await within(tg.seen, 300); tg.close();
@@ -86,7 +87,7 @@ test("folyamat: --bogus -> exit 64, a Telegram 0 kerest kap", { timeout: 15000 }
 
 test("folyamat: --chat --html -> exit 1, a Telegram 0 kerest kap", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram();
-  const dir = mkdtempSync(join(tmpdir(), "sa-"));
+  const dir = tempDir("sa-");
   const r = await runSend(["--chat", "--html", "--", "szoveg"],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_STATE_DIR: dir });
   const hit = await within(tg.seen, 300); tg.close();
@@ -96,7 +97,7 @@ test("folyamat: --chat --html -> exit 1, a Telegram 0 kerest kap", { timeout: 15
 
 test("folyamat: -- utan a --bogus szo szerint szoveg, exit 0", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram();
-  const dir = mkdtempSync(join(tmpdir(), "sa-"));
+  const dir = tempDir("sa-");
   const r = await runSend(["--chat", "1", "--", "--bogus", "x"],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_STATE_DIR: dir });
   tg.close();
@@ -106,7 +107,7 @@ test("folyamat: -- utan a --bogus szo szerint szoveg, exit 0", { timeout: 15000 
 
 test("folyamat: --instance kata -> text=hello, stderr figyelmeztet, notice sor", { timeout: 15000 }, async () => {
   const tg = await fakeTelegram();
-  const dir = mkdtempSync(join(tmpdir(), "sa-"));
+  const dir = tempDir("sa-");
   const r = await runSend(["--chat", "1", "--instance", "kata", "--", "hello"],
     { SUBETHA_TELEGRAM_API: tg.url, BRIDGE_STATE_DIR: dir });
   tg.close();
