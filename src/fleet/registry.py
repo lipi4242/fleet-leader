@@ -78,6 +78,14 @@ def normalize(entry: dict) -> dict:
     return e
 
 
+def load_boxes(path: Path | None = None) -> list[dict]:
+    """A boxes.json gépei. Két alakot fogad el: `{"boxes": [...]}` és a csupasz listát (régi,
+    kézzel írt registry; H5 2026-10-29: a roster/doctor/ask ezen összeomlott)."""
+    doc = load_json(Path(path) if path else registry_dir() / "boxes.json", {})
+    boxes = doc.get("boxes", []) if isinstance(doc, dict) else doc
+    return [b for b in boxes if isinstance(b, dict)] if isinstance(boxes, list) else []
+
+
 def load_agents(path: Path | None = None) -> list[dict]:
     """Minden bejegyzés normalizálva. Hiányzó/sérült fájl → üres lista
     (a felügyelet ilyenkor nem csinál semmit, nem omlik össze). Ha a registry
@@ -111,7 +119,7 @@ def local_host(boxes: list[dict] | None = None) -> str | None:
     except OSError:
         pass
     hn = socket.gethostname()
-    for b in (boxes if boxes is not None else load_json(registry_dir() / "boxes.json", {}).get("boxes", [])):
+    for b in (boxes if boxes is not None else load_boxes()):
         if b.get("hostname") == hn or b.get("key") == hn:
             return b["key"]
     return None

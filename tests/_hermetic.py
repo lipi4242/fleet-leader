@@ -43,6 +43,28 @@ def changed(before: dict, after: dict) -> list[str]:
 GUARDED = REAL_HOME / ".config" / "fleet"
 BEFORE = snapshot(GUARDED)
 
+
+def claude_settings_stat(paths=None) -> dict[str, tuple[int, int]]:
+    """A valódi Claude-gyökerek settings*.json-jainak (méret, mtime_ns)-e — csak stat, tartalmat nem
+    olvas. 2026-10-29: egy teszt a fejlesztő ~/.claude-personal/settings.json-jába telepítette a
+    titok-kaput egy tmp útvonallal; a tmp törlése után minden Bash/Read hívás elakadt."""
+    if paths is None:
+        roots = set(REAL_HOME.glob(".claude*"))
+        if os.environ.get("CLAUDE_CONFIG_DIR"):  # a pop előtt: a fejlesztő valódi gyökere is
+            roots.add(Path(os.environ["CLAUDE_CONFIG_DIR"]).expanduser())
+        paths = [p for r in roots if r.is_dir() for p in r.glob("settings*.json")]
+    out = {}
+    for p in paths:
+        try:
+            st = Path(p).stat()
+            out[str(p)] = (st.st_size, st.st_mtime_ns)
+        except OSError:
+            out[str(p)] = (-1, -1)
+    return out
+
+
+CLAUDE_BEFORE = claude_settings_stat()
+
 # Every temp folder of the run (tempfile here and TMPDIR for child processes) lands in one
 # per-run folder, removed at exit (2026-10-23: test leftovers filled the shared tmp quota).
 REAL_TMP = tempfile.gettempdir()
@@ -57,3 +79,7 @@ if not os.environ.get("_FLEET_TEST_HOME"):
 TEST_HOME = Path(os.environ["_FLEET_TEST_HOME"]).resolve()
 os.environ["HOME"] = str(TEST_HOME)
 os.environ["XDG_CONFIG_HOME"] = str(TEST_HOME / ".config")
+# A fejlesztő saját Claude-konfigja (pl. ~/.claude-personal) se legyen írható célpont: a
+# `fleet install/join/...` oda linkelné az operátor-skilleket (fleet.operator_skills),
+# és a `fleet secrets scan` / `setup` oda telepítené a titok-kaput (2026-10-29: így is lett).
+os.environ.pop("CLAUDE_CONFIG_DIR", None)

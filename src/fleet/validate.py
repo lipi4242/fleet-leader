@@ -11,7 +11,7 @@ def validate(rdir: Path) -> tuple[int, list[str]]:
     ágenshez tartozik."""
     from fleet import names
     from fleet.preflight import missing_fields
-    boxes = {b["key"] for b in reg.load_json(rdir / "boxes.json", {}).get("boxes", [])}
+    boxes = {b["key"] for b in reg.load_boxes(rdir / "boxes.json")}
     from fleet.render import validate_for_render
     problems = []
     seen = set()

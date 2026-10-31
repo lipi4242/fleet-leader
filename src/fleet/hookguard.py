@@ -27,6 +27,12 @@ def user_hook_problems(claude_home: Path) -> list[str]:
     return _file_problems(Path(claude_home) / "settings.json", label)
 
 
+def secrets_gate_problems(claude_home: Path) -> list[str]:
+    """H5: ha a boxon él a titok-kapu, ebben a Claude-gyökérben is fent kell lennie (onFailure: block)."""
+    from fleet import titok_telepit
+    return titok_telepit.problems(claude_home)
+
+
 def _file_problems(path: Path, rel: str) -> list[str]:
     out = []
     if path.is_file():

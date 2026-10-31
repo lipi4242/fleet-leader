@@ -27,6 +27,17 @@ class TestHermeticGuard(unittest.TestCase):
         changed = _hermetic.changed(_hermetic.BEFORE, after)  # live state/*.lock is not ours
         self.assertEqual(changed, [], f"a futás írt ide: {_hermetic.GUARDED}")
 
+    def test_real_claude_settings_unchanged(self):
+        after = _hermetic.claude_settings_stat(list(_hermetic.CLAUDE_BEFORE))
+        changed = sorted(k for k in set(after) | set(_hermetic.CLAUDE_BEFORE)
+                         if after.get(k) != _hermetic.CLAUDE_BEFORE.get(k) and "bak" not in k)
+        self.assertEqual(changed, [], "a futás egy valódi Claude-beállításhoz nyúlt (vagy egy élő session írta)")
+
+    def test_titok_kapu_targets_inside_test_home(self):
+        from fleet import titok_telepit
+        for r in titok_telepit.roots(Path.home()):
+            self.assertTrue(_under(r, _hermetic.TEST_HOME), f"a titok-kapu ide telepítene: {r}")
+
     def test_paths_do_not_point_into_real_home(self):
         real = _hermetic.REAL_HOME
         for name, p in [("registry_pointer_file()", fleet.registry_pointer_file()),

@@ -17,7 +17,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from fleet import dup, signals, maintenance, pane, hookguard, envjel, paneor
+from fleet import dup, signals, maintenance, pane, hookguard, envjel, paneor, outward_hold_box
 from fleet.health import HEALTHY, UNHEALTHY, UNKNOWN_H, MARK, judge, worst
 from fleet.registry import load_agents, agents_for_host, local_host, is_dormant
 from fleet.bridge import read_stamp, bridge_version
@@ -53,7 +53,7 @@ def assess(entry: dict, m: dict, st: dict, *, unit_active: str | None,
            bridge_current: str, locked: bool, pane_dialog: str | None = None,
            now: float | None = None, hook_problems: list[str] = (),
            claude_problem: str | None = None, claude_unknown: str | None = None,
-           env_check: tuple = (None, None)) -> dict:
+           env_check: tuple = (None, None), outward: dict | None = None) -> dict:
     """Pure: egészség (health.py) + a tények listája."""
     facts = []
     problems = []
@@ -89,6 +89,9 @@ def assess(entry: dict, m: dict, st: dict, *, unit_active: str | None,
         problems.append(over)
     if locked:
         facts.append("karbantartási zár aktív")
+    if outward and (outward.get("active") or outward.get("present")):
+        from fleet.outward_hold import line
+        facts.append(line(outward))   # tény, nem hiba: a tartás szándékos (a tick ezalatt nem bélyegez)
     rss = s["process"]["data"].get("rss_mb")
     if rss:
         facts.append(f"memória: {rss} MB")
@@ -104,7 +107,9 @@ def assess(entry: dict, m: dict, st: dict, *, unit_active: str | None,
 
 def hook_problems_for(entry: dict) -> list[str]:
     """F-39: the agent repo's hooks and its Claude home's user-level hooks (N1)."""
-    return hookguard.hook_problems(_workdir(entry)) + hookguard.user_hook_problems(signals.claude_home(entry))
+    home = signals.claude_home(entry)
+    return (hookguard.hook_problems(_workdir(entry)) + hookguard.user_hook_problems(home)
+            + hookguard.secrets_gate_problems(home))
 
 
 def doctor(agent: str | None = None, fix: bool = False) -> list[dict]:
@@ -140,7 +145,8 @@ def doctor(agent: str | None = None, fix: bool = False) -> list[dict]:
                      hook_problems=hook_problems_for(e) + pane_proxy,
                      claude_problem=claude_problem, claude_unknown=claude_unknown,
                      env_check=envjel.check(m["signals"]["process"]["data"].get("pid"))
-                     if m["signals"]["process"]["state"] == "up" else (None, None))
+                     if m["signals"]["process"]["state"] == "up" else (None, None),
+                     outward=outward_hold_box.read(_workdir(e)) if e.get("workdir") else None)
         out.append(rep)
     if fix and agent:
         from fleet import reconcile as rc

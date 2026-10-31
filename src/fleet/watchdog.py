@@ -146,7 +146,7 @@ def main() -> int:
     reap_orphan_bun()
     rdir = registry_dir()
     agents = load_json(rdir / "agents.json", [])
-    host = reg.local_host(load_json(rdir / "boxes.json", {}).get("boxes", []))
+    host = reg.local_host(reg.load_boxes(rdir / "boxes.json"))
     for a in agents:
         try:
             # Dormant = desired-off. Restarting one would undo an operator

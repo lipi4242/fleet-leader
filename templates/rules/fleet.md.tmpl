@@ -81,6 +81,13 @@ minden indulásnál más — ne írd le sehova fixen; a `ListAgents` méri.
 - Kódot csak PR-ral szállítasz; nem mergeled a sajátodat, nem pusholsz a fő
   ágra. A flotta registryje (az `agents.json` a `FLEET_REGISTRY`
   könyvtárban) emberi jóváhagyású sáv.
+- **Ágens kivezetése, beolvasztása, feladat-átadás, frissítés a legújabb
+  Mentatra** (retire / merge / take over / upgrade): előbb
+  `fleet plan-merge --donor <régi> --recipient <fogadó>` és a
+  `/fleet:merge-agents` skill. A felmérés után ⛔ STOP: egy üzenet a
+  tulajdonosnak, és vársz az igenre. Kifelé ható lépést a fogadó tesz a saját
+  eszközével; kulcsot nem másolsz; ágenst nem törölsz (`fleet retire` +
+  registry `dormant`).
 - Ha a flotta-szabályok elavultak (a fejléc verziója régebbi, mint a
   fleet-leader), a `fleet upgrade <repo>` frissíti őket — kérd egy fejlesztő
   ágenstől.

@@ -45,8 +45,9 @@ def _registry(home: Path) -> tuple[Path, str]:
 
 def _box(rdir: Path, host_name: str) -> str:
     """A gép box-kulcsa; ha a boxes.json nem ismeri, felveszi."""
-    doc = reg.load_json(rdir / "boxes.json", {})
-    boxes = doc.get("boxes", [])
+    raw = reg.load_json(rdir / "boxes.json", {})
+    doc = raw if isinstance(raw, dict) else {}
+    boxes = reg.load_boxes(rdir / "boxes.json")
     known = reg.local_host(boxes)
     if known:
         return known

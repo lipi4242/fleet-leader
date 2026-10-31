@@ -105,7 +105,12 @@ def _deploy(res: dict, entry: dict, home: Path, claude_bin: Path, run, first_tic
         rr = run(["systemctl", "--user", "restart", bunit])
         res["steps"].append(("bridge", "ok" if rr.returncode == 0 else "HIBA", [f"{bunit} {b['version']}"]))
     p = install_plugin(entry, claude_bin=claude_bin, home=home, plugin_source=plugin_source)
+    from fleet import titok_telepit   # H5: minden Claude-gyökérbe, a fogadóéba is
     res["steps"].append(("plugin", "ok" if p["ok"] else "figyelem", [p["note"]]))
+    try:
+        res["steps"].append(("titok-kapu", "ok", titok_telepit.install(home)))
+    except titok_telepit.SelfTestFailed as e:  # hangos, de a setup többi lépése megy tovább
+        res["steps"].append(("titok-kapu", "HIBA", [str(e)]))
     ft = tick_watch.fleet_tick(entry, home, time.time())
     if ft is not None and ft["tick_age"] is None and first_tick:
         # a flotta timere csak a következő egész órában tickelne; egy tick most

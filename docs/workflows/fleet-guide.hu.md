@@ -34,7 +34,7 @@ Titok (token, kulcs) nem kerül a registrybe: a bot-token a boxon,
 
 | réteg | hol | mit tud |
 |---|---|---|
-| **Futtató** | `src/fleet/` (stdlib Python), `bin/fleet` | `init`, `validate`, `preflight`, `render`/`install`, `bridge install`/`status`, `reconcile` (timer), `postcheck`, `doctor`, `roster`, `stop`/`wait-up`/`restart`, `lock`/`unlock`/`unquarantine`, `join`/`upgrade`, `status`, `release` |
+| **Futtató** | `src/fleet/` (stdlib Python), `bin/fleet` | `init`, `validate`, `preflight`, `render`/`install`, `bridge install`/`status`, `reconcile` (timer), `postcheck`, `doctor`, `roster`, `stop`/`wait-up`/`restart`, `lock`/`unlock`/`unquarantine`, `join`/`upgrade`, `status`, `release`, `secrets` |
 | **Híd** | `bridge/` (Node) | Telegram ↔ tmux: `bridge.mjs` (poller, inbox, health), `send.mjs` (plain text; `--html` szűrt formázás) |
 | **Plugin + sablonok** | `plugin/`, `templates/` | a skillek és a SessionStart hook; unit-sablon (`--remote-control`, `--strict-mcp-config` beépítve), drop-in, `rules/fleet.md.tmpl`, systemd-timerek |
 
@@ -83,6 +83,25 @@ gépen is fut, a reconcile és a doctor riaszt. A tulajdonjog a `~/.config/fleet
 (`reconcile`); nélküle a reconcile csak megfigyel. A box kulcsa:
 `FLEET_HOST` vagy `~/.config/fleet/host`, különben a `boxes.json` `hostname`
 mezője; ismeretlen gépen nincs alapértelmezett box.
+
+## Titkok egy közös boxon
+
+Egy box ágensei egy Unix-felhasználón futnak, így bármelyik olvashatja a másik kulcsait és
+átiratait. A `fleet secrets` úgy dolgozik, hogy érték egyetlen Claude-kontextusba se kerüljön:
+
+| parancs | mit csinál |
+|---|---|
+| `fleet secrets scan --agent A [--agent B]` | a titokfájlok neve, helye, formátuma és kulcsnevei (repó, `~/.config/<a>/`, `~/.claude-<a>/`, `<repó>/.mentat/`, unit `EnvironmentFile=`), érték nélkül; `~/.mentat/titkok/leltar.json` (0600), és felteszi a titok-kaput |
+| `fleet secrets approve --item OP:NÉV:HONNAN:HOVA:MIÉRT --owner-text "…"` | tételes tulajdonosi jóváhagyás, legfeljebb 60 percig, tételenként egyszer |
+| `fleet secrets move\|copy --name K --from X --to Y --approval ID` | egy kulcs átvitele folyamaton belül, 0600, atomikusan, symlink nélkül; nyugta: `~/.mentat/titkok/nyugtak.jsonl` |
+| `fleet secrets audit [--repo DIR]` | került-e leltárban lévő érték átiratba, repóba vagy git-történetbe (csak fájl:sor) |
+| `fleet secrets hook install\|status` | a titok-kapu (PreToolUse, csak tilt) a box minden `~/.claude*/settings.json`-jában |
+
+A kapu nem engedi megnyitni a leltárban lévő vagy kulcsnevű fájlt, más ágens átiratát, és a
+környezet kiírását, `cat`/`sed`/`python`/`cp`/`ln`/glob útján sem. v1 korlátai: közös
+Unix-felhasználó, a jóváhagyás-fájlt az ágens is megírhatja, és egy elszánt szereplő egy hookot
+megkerülhet. v2: sandbox denyRead, ágensenként külön Unix-felhasználó, a híd által aláírt
+jóváhagyás, `fleet secrets run --as` burkoló.
 
 ## Tesztek
 

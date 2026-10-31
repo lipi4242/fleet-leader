@@ -42,3 +42,20 @@ Engedélyt soha nem ad.
 - **A forrás** a `security/eszkozok/identitas/` (CISO); ez a mappa annak a másolata.
 
 Tesztek: `python3 -I -m unittest discover -s plugin/hooks/identitas -p 'test_nemakad*.py' -q`.
+
+## Titok-kapu és ágens-határ (`titok_kapu.py`)
+
+PreToolUse hook, csak tilt. Nem enged titkot (kulcsfájl, más ágens átirata, környezet-kiírás) a
+Claude-kontextusba. Ugyanez a hook az ágens-határ: más ágens szabályfájlját a fő ágán, a systemd
+user-unitokat és a flotta-registryt kézzel nem írhatod. Összeolvasztás-módban (`fleet secrets
+merge-mode`, legfeljebb 7 nap) a más ágens fő ágát író git, a helyi `tmux send-keys` és a más ágens
+kódjával futó kifelé ható parancs is tilos.
+
+- **Telepítés:** `fleet secrets hook install` a box minden `~/.claude*/settings.json`-jába, a kódot a
+  `~/.mentat/bin/titok-kapu/<sha>/` alá másolja, és csak sikeres önteszt után kapcsolja be.
+- **Hibánál:** a titok-ellenőrzés tilt; az ágens-határ hibája átenged, és a
+  `~/.mentat/titkok/hatar-hibak.log`-ba ír egy sort.
+- **Korlát:** sebességcsökkentő küszöb. Szkriptfájl, értelmező és futás közben összerakott parancs
+  átmegy rajta; a valódi kontroll az utólagos állapot-ellenőrzés.
+- **A forrás** a `security/eszkozok/identitas/`; a futó fájlok itt bájtra egyeznek vele
+  (`tests/test_titok_telepit.py`).

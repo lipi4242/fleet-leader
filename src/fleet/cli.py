@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from fleet import __version__, registry_dir, RegistryNotConfigured
+from fleet import __version__, registry_dir, RegistryNotConfigured, PLUGIN_DIR
 from fleet import registry as reg
 
 
@@ -238,8 +238,24 @@ def cmd_restart(a) -> int:
     return {"ok": 0, "pending": 3}.get(r["status"], 1)
 
 
+#: H5-mérés (2026-10-29): a fejlesztő ágens a `fleet --help`-et olvasta, de az összeolvasztás
+#: eljárásához nem jutott el. Ez a sor minden `fleet --help` alján ott van.
+MERGE_EPILOG = (
+    "Ágens kivezetése, beolvasztása, feladatainak átadása, frissítése a legújabb Mentatra\n"
+    "(retire / merge / hand over duties / upgrade an agent): ELŐSZÖR\n"
+    "  fleet plan-merge --donor <régi> --recipient <fogadó>\n"
+    "— lépések és ⛔ STOP-pontok (a tulajdonos igene nélkül semmi kifelé ható, semmi törlés).\n"
+    f"Az eljárás: {PLUGIN_DIR / 'skills' / 'merge-agents' / 'SKILL.md'} (/merge-agents skill)."
+)
+
+#: Ezek után a parancsok után az operátor-skillek (merge-agents) a box Claude Code-jában is ott
+#: vannak (symlink a helyi checkoutra; `fleet.operator_skills`).
+LINK_SKILLS_AFTER = {"install", "join", "setup", "upgrade", "init"}
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="fleet", description="fleet-leader — always-on ágensek futtatása")
+    p = argparse.ArgumentParser(prog="fleet", description="fleet-leader — always-on ágensek futtatása",
+                                formatter_class=argparse.RawDescriptionHelpFormatter, epilog=MERGE_EPILOG)
     p.add_argument("--version", action="version", version=f"fleet {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -277,6 +293,15 @@ def build_parser() -> argparse.ArgumentParser:
     x = sub.add_parser("status", help="egy ágens elemei és szinergiái (mentat.json, .mentat/local.json, timerek)"); x.add_argument("agent"); x.add_argument("--repo"); x.add_argument("--json", action="store_true"); x.set_defaults(fn=cmd_status)
     x = sub.add_parser("upgrade", help="a repó fleet-fájljainak frissítése"); x.add_argument("repo"); x.set_defaults(fn=cmd_upgrade)
     x = sub.add_parser("release", help="a telepített release-tuple"); x.add_argument("--show", action="store_true"); x.set_defaults(fn=cmd_release)
+    from fleet import ask_cli, login_cli, plan_merge, probe, retire   # ágens-összeolvasztás (2026-10-29)
+    probe.add_parser(sub); login_cli.add_parser(sub); retire.add_parser(sub)
+    ask_cli.add_parser(sub); plan_merge.add_parser(sub)
+    from fleet import titok_cli   # titok-leltár és titok-kapu (H5, 2026-10-29)
+    titok_cli.add_parser(sub)
+    from fleet import outward_hold_cli   # kifelé-tartás (H5, 2026-10-29)
+    outward_hold_cli.add_parser(sub)
+    from fleet import registry_set   # registry-mező a tulajdonos igenjével (H5, 2026-10-29)
+    registry_set.add_parser(sub)
     return p
 
 
@@ -301,6 +326,10 @@ def cmd_capabilities(a) -> int:
 
 def main(argv=None) -> int:
     a = build_parser().parse_args(argv)
+    if a.cmd in LINK_SKILLS_AFTER and not getattr(a, "check", False):
+        from fleet.operator_skills import link_operator_skills
+        for note in link_operator_skills():
+            print(f"fleet: {note}", file=sys.stderr)
     try:
         return a.fn(a)
     except RegistryNotConfigured as e:

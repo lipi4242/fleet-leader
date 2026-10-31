@@ -102,9 +102,14 @@ def render(agent: str, repo: Path, engine: dict, found: list[tuple[Path, Path]])
                f"# Ne szerkeszd: `fleet join` írja (schedule_owner: fleet).\n"
                f"[Unit]\nDescription=anytime tick ({agent}) — fleet-ütemezés\n\n"
                f"[Service]\nType=oneshot\n" + "\n".join(body) + "\n")
-    timer = (f"[Unit]\nDescription=anytime tick ütem ({agent}) — fleet\n\n[Timer]\n"
-             + "\n".join(cal) + f"\nPersistent=true\nUnit={u}.service\n\n[Install]\nWantedBy=timers.target\n")
-    return {f"{u}.service": service, f"{u}.timer": timer}
+    return {f"{u}.service": service, f"{u}.timer": timer_text(agent, cal)}
+
+
+def timer_text(agent: str, cal: list[str]) -> str:
+    """A flotta tick-timerének teljes szövege (a render és a `registry set tick_period_s` is ezt írja)."""
+    return (f"[Unit]\nDescription=anytime tick ütem ({agent}) — fleet\n\n[Timer]\n"
+            + "\n".join(cal) + f"\nPersistent=true\nUnit={tick_unit(agent)}.service\n\n[Install]\n"
+            "WantedBy=timers.target\n")
 
 
 def take_over(t: Txn, *, agent: str, repo: Path, engine: dict, unit_dir: Path) -> list[str]:

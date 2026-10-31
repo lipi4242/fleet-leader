@@ -30,8 +30,9 @@ OWN = os.path.dirname(os.path.realpath(__file__))  # the gate's own code, wherev
 
 def _targets():
     m = os.path.join(_home(), ".mentat")
-    # A teljes ~/.mentat/bin/: a kapu ÉS a nemakad kódja, a jegyzékekkel (CISO, 10-24)
-    return [os.path.join(m, f) for f in FILES], [os.path.join(m, "bin"), OWN]
+    # A teljes ~/.mentat/bin/: a kapu ÉS a nemakad kódja, a jegyzékekkel (CISO, 10-24); a
+    # ~/.mentat/titkok/: a titok-leltár, a jóváhagyások és a nyugták (csak `fleet secrets` írja, H5)
+    return [os.path.join(m, f) for f in FILES], [os.path.join(m, "bin"), os.path.join(m, "titkok"), OWN]
 
 
 def is_protected(t, ancestors=False):

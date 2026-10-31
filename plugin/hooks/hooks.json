@@ -26,6 +26,17 @@
             "onFailure": "block"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Read|Edit|MultiEdit|Write|NotebookEdit|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/identitas/titok_kapu.py\" --hook",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
       }
     ],
     "PermissionRequest": [

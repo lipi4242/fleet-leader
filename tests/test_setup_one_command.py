@@ -66,7 +66,7 @@ class TestSetupOneCommand(Home):
         r = self._deploy("healthy")
         self.assertEqual(r["status"], "ok")
         self.assertEqual([s[0] for s in r["steps"]],
-                         ["validate", "join", "preflight", "install", "plugin", "reconcile", "doctor"])
+                         ["validate", "join", "preflight", "install", "plugin", "titok-kapu", "reconcile", "doctor"])
         self.assertTrue(r["summary"].startswith("fleet setup probe: KÉSZ — doctor: healthy"), r["summary"])
         self.assertTrue((self.work / ".claude/fleet.json").exists())   # a join valóban lefutott
         self.assertEqual(self._deploy("pending")["status"], "pending")

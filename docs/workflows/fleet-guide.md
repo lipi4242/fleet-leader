@@ -29,7 +29,7 @@ keys) never go into the registry: a bot token lives on the box in
 
 | layer | where | what it does |
 |---|---|---|
-| **Runner** | `src/fleet/` (Python, stdlib only), `bin/fleet` | `init`, `setup`, `validate`, `preflight`, `install`, `bridge`, `reconcile` (timer), `postcheck`, `doctor`, `roster`, `stop`/`wait-up`/`restart`, `lock`/`unlock`/`unquarantine`, `join`/`upgrade`, `status`, `release` |
+| **Runner** | `src/fleet/` (Python, stdlib only), `bin/fleet` | `init`, `setup`, `validate`, `preflight`, `install`, `bridge`, `reconcile` (timer), `postcheck`, `doctor`, `roster`, `stop`/`wait-up`/`restart`, `lock`/`unlock`/`unquarantine`, `join`/`upgrade`, `status`, `release`, `secrets` |
 | **Bridge** | `bridge/` (Node.js) | Telegram to tmux: `bridge.mjs` (poller, inbox, health), `send.mjs` (plain text; `--html` for filtered formatting) |
 | **Plugin and templates** | `plugin/`, `templates/` | Claude Code skills and a SessionStart hook; unit template, drop-in, `rules/fleet.md.tmpl`, systemd timers |
 
@@ -73,6 +73,25 @@ also runs on THIS machine, reconcile and doctor raise an alert. Ownership is
 the `~/.config/fleet/controller` file (`reconcile`); without it reconcile only
 observes. The box key is `FLEET_HOST` or `~/.config/fleet/host`, otherwise the
 `hostname` in `boxes.json`; an unknown machine has no default box.
+
+## Secrets on a shared box
+
+All agents on a box share one Unix user, so any agent can read another's keys and
+transcripts. `fleet secrets` keeps values out of every Claude context:
+
+| command | what it does |
+|---|---|
+| `fleet secrets scan --agent A [--agent B]` | names, places, formats and key names of the secret files (repo, `~/.config/<a>/`, `~/.claude-<a>/`, `<repo>/.mentat/`, unit `EnvironmentFile=`), never values; writes `~/.mentat/titkok/leltar.json` (0600) and installs the secrets gate |
+| `fleet secrets approve --item OP:NAME:FROM:TO:WHY --owner-text "…"` | itemised owner approval, at most 60 minutes, each item usable once |
+| `fleet secrets move\|copy --name K --from X --to Y --approval ID` | moves one key in-process, 0600, atomic, no symlinks; receipt in `~/.mentat/titkok/nyugtak.jsonl` |
+| `fleet secrets audit [--repo DIR]` | did an inventoried value leak into a transcript, a repo or its git history (file:line only) |
+| `fleet secrets hook install\|status` | the secrets gate (PreToolUse, deny only) in every `~/.claude*/settings.json` of the box |
+
+The gate denies opening an inventoried or secret-named file, another agent's
+transcript, and dumping the environment, also through `cat`/`sed`/`python`/`cp`/`ln`/globs.
+v1 limits: same Unix user, the approval file is agent-writable, and a determined actor
+can still bypass a hook. v2: sandbox denyRead, one Unix user per agent, bridge-signed
+approvals, a `fleet secrets run --as` wrapper.
 
 ## Tests
 
