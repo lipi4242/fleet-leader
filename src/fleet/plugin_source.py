@@ -56,3 +56,10 @@ def merge_local(existing: dict, source: dict) -> dict:
     out = json.loads(json.dumps(existing))
     out.setdefault("extraKnownMarketplaces", {}).setdefault(MARKETPLACE_NAME, {"source": source})
     return out
+
+
+def legacy_plugins(settings: dict) -> list[str]:
+    """A bekapcsolt, másik marketplace-ről jövő „fleet” pluginek (pl. a régi `fleet@fleet-ops`).
+    Ha a miénk mellett futnak, minden /fleet:* skill és hook kétszer van jelen."""
+    enabled = settings.get("enabledPlugins") or {}
+    return sorted(k for k, v in enabled.items() if k.startswith("fleet@") and k != PLUGIN_KEY and v is True)

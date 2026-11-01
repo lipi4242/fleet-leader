@@ -3,6 +3,22 @@
 Every release also ships a machine-readable `release.json` at the root of its
 tag.
 
+## 0.4.1
+
+A patch release for problems found while upgrading two live agents to 0.4.0. Not breaking.
+
+- **The secrets gate no longer mistakes a search pattern for a key file**: `grep`, `rg` and `ag`
+  patterns are text, so `grep -o '"lease_token": …' out.json` is allowed again. File arguments and
+  `grep -f <file>` are still checked, and key files stay blocked. Plugin 1.5.1.
+- **`fleet secrets hook status` tells the truth**: it reports a gate that was never installed as
+  missing and exits non-zero, instead of showing green.
+- **One fleet plugin, installed for one agent**: `fleet upgrade` switches the old `fleet@fleet-ops`
+  plugin off, so two "fleet" plugins never run side by side. `fleet plugin install <agent>`
+  installs the plugin with local scope in that agent's repo, so other agents sharing the box's
+  Claude account are not affected; `fleet setup` does the same.
+- **Releases check the install line**: a README `git clone --branch` pin that does not match the
+  release stops the release.
+
 ## 0.4.0
 
 Released together with the Mentat brain 0.4.0 and anytime-engine 0.4.0.

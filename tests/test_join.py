@@ -59,5 +59,28 @@ class TestJoin(unittest.TestCase):
         self.assertEqual(r["rules"], "frissítve")
 
 
+    def test_upgrade_regi_fleet_plugint_kikapcsolja(self):
+        """2026-10-31, egy élő ágens frissítésénél: a régi pluginnal belépett repóban az upgrade a `fleet@fleet-ops` mellé
+        felvette a `fleet@fleet-leader`-t, így két „fleet” plugin futott (dupla /fleet:* és hookok)."""
+        join.join(self.repo, agent="probe")
+        sp = self.repo / ".claude" / "settings.json"
+        s = json.loads(sp.read_text())
+        del s["enabledPlugins"]["fleet@fleet-leader"], s["extraKnownMarketplaces"]["fleet-leader"]
+        s["enabledPlugins"].update({"fleet@fleet-ops": True, "mas@valahol": True})
+        s["extraKnownMarketplaces"]["fleet-ops"] = {"source": {"source": "github", "repo": "lipi4242/fleet-ops"}}
+        sp.write_text(json.dumps(s))
+        r = join.upgrade(self.repo)
+        s = json.loads(sp.read_text())
+        self.assertEqual(s["enabledPlugins"], {"fleet@fleet-ops": False, "mas@valahol": True,
+                                               "fleet@fleet-leader": True})
+        self.assertIn("fleet-ops", s["extraKnownMarketplaces"])  # a felhasználó bejegyzése marad
+        self.assertEqual(r["plugin_migration"], {"disabled": ["fleet@fleet-ops"], "enabled": "fleet@fleet-leader",
+                                                 "run_on_box_before_merge": "fleet plugin install probe"})
+        before = sp.read_text()
+        r2 = join.upgrade(self.repo)  # idempotens
+        self.assertEqual(sp.read_text(), before)
+        self.assertNotIn("plugin_migration", r2)
+
+
 if __name__ == "__main__":
     unittest.main()

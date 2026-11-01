@@ -25,7 +25,7 @@ You need this only if you want your colleague to keep working while your laptop 
 Easiest: ask your Mentat colleague to set this up on your server; it runs these steps for you. By hand, on the Linux server (needs `systemd --user`, `tmux`, the `claude` CLI, Python 3 and Node.js 18+):
 
 ```sh
-git clone --branch v0.3.1 https://github.com/lipi4242/fleet-leader ~/fleet-leader
+git clone --branch v0.4.1 https://github.com/lipi4242/fleet-leader ~/fleet-leader
 mkdir -p ~/.local/bin && ln -sf ~/fleet-leader/bin/fleet ~/.local/bin/fleet
 cd ~/my-agent-repo && fleet init my-agent && fleet setup my-agent
 ```

@@ -25,7 +25,7 @@ Csak akkor kell, ha azt szeretnéd, hogy a kollégád akkor is dolgozzon, amikor
 A legegyszerűbb: kérd meg a Mentat-kollégádat, hogy tegye fel ezt a szerveredre, ő futtatja a lépéseket. Kézzel, a Linux szerveren (kell: `systemd --user`, `tmux`, a `claude` CLI, Python 3 és Node.js 18+):
 
 ```sh
-git clone --branch v0.3.1 https://github.com/lipi4242/fleet-leader ~/fleet-leader
+git clone --branch v0.4.1 https://github.com/lipi4242/fleet-leader ~/fleet-leader
 mkdir -p ~/.local/bin && ln -sf ~/fleet-leader/bin/fleet ~/.local/bin/fleet
 cd ~/az-agens-repoja && fleet init az-agens && fleet setup az-agens
 ```

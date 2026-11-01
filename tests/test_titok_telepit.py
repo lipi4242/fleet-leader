@@ -134,5 +134,45 @@ class SelfTest(unittest.TestCase):
             self.assertIn("önteszt rendben", T.install(self.home)[-1])
 
 
+class HookStatus(unittest.TestCase):
+    """2026-10-31, egy élő boxon: a `hook status` „minden Claude-gyökérben fent”-et írt, holott a kapu
+    sosem települt (sem kód, sem leltár, a ~/.claude/settings.json-ban PreToolUse sem volt)."""
+
+    def setUp(self):
+        self.home = Path(tempfile.mkdtemp()).resolve()
+        self.addCleanup(shutil.rmtree, self.home, True)
+        (self.home / ".claude").mkdir()
+        (self.home / ".claude" / "settings.json").write_text("{}")
+        p = mock.patch.dict(os.environ, {"HOME": str(self.home)})
+        p.start()
+        self.addCleanup(p.stop)
+
+    def status(self):
+        import argparse
+        import contextlib
+        import io
+        from fleet import titok_cli
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = titok_cli.cmd_hook(argparse.Namespace(action="status"))
+        return rc, out.getvalue()
+
+    def test_sosem_telepitett_kapu_nem_zold(self):
+        rc, out = self.status()
+        self.assertNotIn("minden Claude-gyökérben fent", out)
+        self.assertIn("NINCS telepítve", out)
+        self.assertEqual(rc, 1)
+
+    def test_telepitett_kapu_zold(self):
+        T.install(self.home)
+        rc, out = self.status()
+        self.assertIn("minden Claude-gyökérben fent", out)
+        self.assertEqual(rc, 0)
+
+    def test_a_doctor_tovabbra_is_csak_hasznalt_kapunal_jelez(self):
+        self.assertEqual(T.problems(self.home / ".claude", self.home), [])
+        self.assertTrue(T.problems(self.home / ".claude", self.home, required=True))
+
+
 if __name__ == "__main__":
     unittest.main()

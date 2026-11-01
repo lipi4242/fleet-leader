@@ -12,7 +12,7 @@ import os
 import re
 
 from bash_szavak import subst, tokens
-from titok_kod import PROC, code, envdump
+from titok_kod import PROC, code, envdump, search_args
 from titok_minta import secret
 from vedett import HEREDOC, INTERP, PREFIX, SEP, SHELLS
 
@@ -73,6 +73,7 @@ def _command(words, cwd, lel, state):
     name, args = os.path.basename(words[0]), words[1:]
     if name == "dd":
         args = [a[3:] for a in args if a.startswith("if=")]
+    args = search_args(name, args)  # grep MINTA nem út
     why = envdump(name, args)
     if why:
         return why

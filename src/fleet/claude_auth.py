@@ -29,10 +29,10 @@ TOKEN_VAR = "CLAUDE_CODE_OAUTH_TOKEN"
 UNIT_UNSETS = ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY", TOKEN_VAR, "CLAUDE_CONFIG_DIR")
 
 
-def run_env(cmd: list[str], env: dict) -> subprocess.CompletedProcess:
+def run_env(cmd: list[str], env: dict, cwd: Path | None = None) -> subprocess.CompletedProcess:
     """A token környezetben megy, nem argv-ben (a /proc/<pid>/cmdline látszik)."""
     try:
-        return subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=60)
+        return subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=60, cwd=cwd)
     except (OSError, subprocess.TimeoutExpired) as e:
         return subprocess.CompletedProcess(cmd, 127, "", str(e))
 

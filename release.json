@@ -1,17 +1,17 @@
 {
   "component": "fleet",
-  "version": "0.4.0",
-  "date": "2026-10-31",
-  "severity": "minor",
+  "version": "0.4.1",
+  "date": "2026-11-01",
+  "severity": "patch",
   "security": true,
   "breaking": false,
   "migrations_from": [
-    "0.3"
+    "0.4"
   ],
   "you_need_to": [
-    "On each box, run `fleet secrets hook install` (or `fleet setup`) once to put the secrets gate into every Claude config on the box; `fleet secrets hook status` shows where it is active.",
-    "Run `fleet upgrade <repo>` for each agent to pick up the updated fleet rule."
+    "Update the fleet plugin where it is installed: `claude plugin marketplace update fleet-leader`, then in each agent repo that uses it `fleet plugin install <agent>` (local scope).",
+    "Pull the box's fleet code (`git -C ~/fleet-leader pull --ff-only`) so `fleet secrets hook status` reports honestly."
   ],
-  "changelog": "CHANGELOG.md#040",
+  "changelog": "CHANGELOG.md#041",
   "requires_if_present": {}
 }

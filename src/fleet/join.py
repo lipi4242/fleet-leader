@@ -26,7 +26,7 @@ from fleet.join_mentat import join_mentat
 from fleet.names import is_valid_agent_name
 from fleet.txn import Txn, run_cmd
 
-from fleet.plugin_source import load_json as _load_json, MARKETPLACE_NAME, PLUGIN_KEY, merge_local, parse as parse_source  # noqa: E402,F401
+from fleet.plugin_source import load_json as _load_json, MARKETPLACE_NAME, PLUGIN_KEY, legacy_plugins, merge_local, parse as parse_source  # noqa: E402,F401
 
 #: A forrás egyetlen helye: `fleet.plugin_source` (PUBLIC_REPO; fork esetén
 #: FLEET_MARKETPLACE_REPO=<owner>/<repo>). Privát repónál a telepítés
@@ -57,9 +57,12 @@ def read_manifest(repo: Path) -> dict | None:
 
 def merge_settings(existing: dict, *, marketplace: dict = DEFAULT_MARKETPLACE) -> dict:
     """Pure: a fleet plugin bejegyzései a project settings.json-ban, minden
-    más kulcs érintetlenül."""
+    más kulcs érintetlenül. Egy régi „fleet” plugint (`legacy_plugins`) kikapcsol,
+    de a marketplace-bejegyzését nem törli."""
     out = json.loads(json.dumps(existing))  # deep copy
     out.setdefault("extraKnownMarketplaces", {})[MARKETPLACE_NAME] = {"source": marketplace}
+    for k in legacy_plugins(out):
+        out["enabledPlugins"][k] = False
     out.setdefault("enabledPlugins", {})[PLUGIN_KEY] = True
     return out
 
@@ -140,6 +143,9 @@ def upgrade(repo: Path, now: datetime.date | None = None) -> dict:
         settings_path = repo / ".claude" / "settings.json"
         existing = json.loads(settings_path.read_text() or "{}") if settings_path.exists() else {}
         t.write(settings_path, json.dumps(merge_settings(existing), indent=2, ensure_ascii=False) + "\n")
+        if legacy_plugins(existing):
+            result["plugin_migration"] = {"disabled": legacy_plugins(existing), "enabled": PLUGIN_KEY,
+                                          "run_on_box_before_merge": f"fleet plugin install {m['agent']}"}
         t.write(manifest_path(repo), json.dumps(m, indent=2, ensure_ascii=False) + "\n")
         if result["ok"] and mm.load(repo) is not None and mm.schema_ok(mm.load(repo)):
             t.guard(repo / ".mentat" / "local.json")

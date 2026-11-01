@@ -4,6 +4,7 @@
                            mutató szövegliterál (út, vagy kulcsfájl-név mint ".env")
     envdump(name, args)    a parancs kiírja-e a környezetet: bare env, printenv, set, export -p,
                            ps e/eww, systemctl … show-environment
+    search_args(name, args)  grep/rg/ag-nál a keresett MINTA nem út: kiveszi, a -f/--file fájlját meghagyja
 """
 import os
 import re
@@ -53,3 +54,40 @@ def envdump(name, args):
     if name in ("systemctl", "launchctl") and any("environment" in a.lower() for a in args):
         return "környezet kiírása (%s)" % name
     return None
+
+
+
+SEARCHERS = {"grep", "egrep", "fgrep", "zgrep", "rg", "ag"}
+VALUE_OPTS = {"-m", "-A", "-B", "-C", "-d", "-D", "-g", "-t", "-T", "-j", "-M", "--max-count", "--context",
+              "--after-context", "--before-context", "--glob", "--iglob", "--type", "--type-not", "--max-depth"}
+
+
+def search_args(name, args):
+    """A keresőparancs argumentumai a minta nélkül: a minta szöveg, nem fájl (a `"lease_token": *"…"`
+    a mezőnevet keresi, kulcsfájlt nem nyit; Kata, 2026-10-31). A -f/--file fájlja olvasás, az marad."""
+    if name not in SEARCHERS:
+        return args
+    out, pos, explicit, skip, value, dashdash = [], [], False, False, False, False
+    for a in args:
+        if skip:
+            skip = False
+        elif value:
+            value = False
+            out.append(a)
+        elif not dashdash and a == "--":
+            dashdash = True
+        elif not dashdash and a.startswith("-") and a != "-":
+            short = not a.startswith("--")
+            if a in ("-e", "--regexp"):
+                explicit = skip = True
+                continue
+            if a.startswith("--regexp=") or (short and a.startswith("-e")):
+                explicit = True
+                continue
+            if a in ("-f", "--file") or a.startswith("--file=") or (short and a.startswith("-f")):
+                explicit = True
+            value = a in VALUE_OPTS
+            out.append(a)
+        else:
+            pos.append(a)
+    return out + (pos if explicit else pos[1:])

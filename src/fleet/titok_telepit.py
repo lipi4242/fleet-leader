@@ -155,10 +155,16 @@ def install(home: Path | None = None) -> list[str]:
     return notes + [f"titok-kapu kód: {code_dir(home) / sha} ({len(roots(home))} Claude-gyökér, önteszt rendben)"]
 
 
-def problems(claude_home: Path, home: Path | None = None) -> list[str]:
-    """Ha a boxon már él a titok-kapu (kód vagy leltár), minden Claude-gyökérben fent kell lennie."""
+def in_use(home: Path) -> bool:
+    """Él-e már a boxon a titok-kapu (kód vagy leltár)."""
+    return (code_dir(home) / "current").exists() or H.inventory_path(home).exists()
+
+
+def problems(claude_home: Path, home: Path | None = None, required: bool = False) -> list[str]:
+    """Ha a boxon már él a titok-kapu (kód vagy leltár), minden Claude-gyökérben fent kell lennie.
+    `required=True` (a `hook status`): akkor is hiba, ha a boxon sosem települt."""
     home = Path(home or Path.home())
-    if not ((code_dir(home) / "current").exists() or H.inventory_path(home).exists()):
+    if not required and not in_use(home):
         return []
     label = "~/" + Path(claude_home).name + "/settings.json"
     try:

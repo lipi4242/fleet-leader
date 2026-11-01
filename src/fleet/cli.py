@@ -163,6 +163,9 @@ def cmd_upgrade(a) -> int:
     from fleet.join import upgrade
     r = upgrade(Path(a.repo).resolve())
     _print(r)
+    if r.get("plugin_migration"):
+        print(f"fleet: a PR merge-e ELŐTT futtasd a boxon: {r['plugin_migration']['run_on_box_before_merge']}",
+              file=sys.stderr)
     return 0 if r["ok"] else 1
 
 
@@ -302,6 +305,8 @@ def build_parser() -> argparse.ArgumentParser:
     outward_hold_cli.add_parser(sub)
     from fleet import registry_set   # registry-mező a tulajdonos igenjével (H5, 2026-10-29)
     registry_set.add_parser(sub)
+    from fleet import plugin_install   # a /fleet:* plugin local scope-pal (2026-10-31)
+    plugin_install.add_parser(sub)
     return p
 
 

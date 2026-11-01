@@ -108,7 +108,7 @@ class TestMarketplaceAndPlugin(Home):
         self.assertTrue(r["ok"], r)
         calls = self.fb.calls()
         self.assertIn(f"claude plugin marketplace add {plugin_source.PUBLIC_REPO}", calls)
-        self.assertIn("claude plugin install fleet@fleet-leader", calls)
+        self.assertIn("claude plugin install fleet@fleet-leader --scope local", calls)
 
 
 class TestTargetedStopRestart(Home):

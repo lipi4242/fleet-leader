@@ -82,9 +82,12 @@ def cmd_hook(a) -> int:
     except T.SelfTestFailed as e:
         print(f"fleet secrets: {e}", file=sys.stderr)
         return 2
-    probs = [p for r in T.roots(Path.home()) for p in T.problems(r)]
-    if (T.code_dir(Path.home()) / "current").exists():
-        probs += [f"titok-kapu önteszt: {x}" for x in T.selftest(Path.home())]
+    home = Path.home()
+    probs = [p for r in T.roots(home) for p in T.problems(r, home, required=True)]
+    if (T.code_dir(home) / "current").exists():
+        probs += [f"titok-kapu önteszt: {x}" for x in T.selftest(home)]
+    if probs and not T.in_use(home):
+        probs.insert(0, "titok-kapu: NINCS telepítve ezen a boxon (sem kód, sem leltár)")
     print("\n".join(probs) if probs else "titok-kapu: minden Claude-gyökérben fent (onFailure: block)")
     print(hatar_mod.status())
     return 1 if probs else 0
